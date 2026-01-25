@@ -2,7 +2,7 @@
 // Configuration Store
 // ============================================================================
 
-import type { SessionKitConfig, AccessHooks, ProtectionRule } from "./types";
+import type { SessionKitConfig, AccessHooks, ProtectionRule, Session } from "./types";
 import { isValidPattern, isValidRedirectPath } from "./validation";
 
 /**
@@ -12,6 +12,8 @@ export interface ResolvedConfig {
   loginPath: string;
   protect: ProtectionRule[];
   access: Required<AccessHooks>;
+  runWithSessionContext?: <T>(context: { session: Session | null }, fn: () => T) => T;
+  getSessionContext?: () => { session: Session | null } | undefined;
 }
 
 let config: ResolvedConfig = {
@@ -22,6 +24,8 @@ let config: ResolvedConfig = {
     getPermissions: (session) => session?.permissions ?? [],
     check: undefined as any, // Will be undefined but typed for convenience
   },
+  runWithSessionContext: undefined,
+  getSessionContext: undefined,
 };
 
 /**
@@ -66,6 +70,8 @@ export function setConfig(userConfig: SessionKitConfig): void {
       getPermissions: userConfig.access?.getPermissions ?? ((session) => session?.permissions ?? []),
       check: userConfig.access?.check as any,
     },
+    runWithSessionContext: userConfig.runWithSessionContext,
+    getSessionContext: userConfig.getSessionContext,
   };
 }
 

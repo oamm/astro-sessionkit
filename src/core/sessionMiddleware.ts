@@ -3,9 +3,10 @@
 // ============================================================================
 
 import type { MiddlewareHandler } from "astro";
-import { runWithSessionContext } from "./context";
+import { runWithSessionContext as defaultRunWithSessionContext } from "./context";
 import { isValidSessionStructure } from "./validation";
 import type { Session } from "./types";
+import { getConfig } from "./config";
 
 /**
  * Session key used to store session in context.session
@@ -41,5 +42,15 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
   }
 
   // Run the rest of the request chain with session context
-  return runWithSessionContext({ session }, () => next());
+  const config = getConfig();
+
+  // If getSessionContext is provided, but runWithSessionContext is NOT,
+  // we assume the user is managing the context at a superior level
+  // and we should NOT wrap the call in our default runner.
+  if (config.getSessionContext && !config.runWithSessionContext) {
+    return next();
+  }
+
+  const runner = config.runWithSessionContext ?? defaultRunWithSessionContext;
+  return runner({ session }, () => next());
 };
