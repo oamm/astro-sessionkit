@@ -113,11 +113,11 @@ export interface SessionKitConfig {
    * Custom session context runner (optional)
    * Use this to provide your own AsyncLocalStorage implementation or wrap the request
    */
-  runWithSessionContext?: <T>(context: { session: Session | null }, fn: () => T) => T;
+  runWithSessionContext?: <T>(context: SessionContext, fn: () => T) => T;
 
   /**
    * Custom session context getter (optional)
    * Use this to provide your own way to retrieve the session context
    */
-  getSessionContext?: () => { session: Session | null } | undefined;
+  getSessionContext?: () => SessionContext | undefined;
 }
