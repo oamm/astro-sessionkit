@@ -28,7 +28,7 @@ import type { SessionKitConfig } from "./core/types";
  * });
  * ```
  */
-export default function sessionkit(config: SessionKitConfig = {}): AstroIntegration {
+export default function sessionKit(config: SessionKitConfig = {}): AstroIntegration {
   // Store configuration
   setConfig(config);
 
