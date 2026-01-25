@@ -3,15 +3,8 @@
 // ============================================================================
 
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { Session } from "./types";
+import type { SessionContext } from "./types";
 import { getConfig } from "./config";
-
-/**
- * What we store in AsyncLocalStorage
- */
-export interface SessionContext {
-  session: Session | null;
-}
 
 const als = new AsyncLocalStorage<SessionContext>();
 

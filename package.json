@@ -1,6 +1,6 @@
 {
   "name": "astro-sessionkit",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Simple session access and route protection for Astro applications",
   "type": "module",
   "main": "./dist/index.js",
@@ -29,15 +29,14 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc --project tsconfig.json",
-    "types:bundle": "rollup -c rollup.config.mjs",
+    "build": "rollup -c rollup.config.mjs",
     "clean": "rimraf dist",
     "dev": "tsc --watch --project tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "bench": "vitest bench run bench/",
-    "prepublishOnly": "npm run clean && npm run build && npm run types:bundle",
+    "prepublishOnly": "npm run clean && npm run build",
     "prepare": "npm run prepublishOnly"
   },
   "keywords": [

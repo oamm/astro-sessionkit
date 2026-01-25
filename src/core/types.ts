@@ -26,6 +26,13 @@ export interface Session {
   [key: string]: unknown;
 }
 
+/**
+ * What we store in AsyncLocalStorage
+ */
+export interface SessionContext {
+  session: Session | null;
+}
+
 // ============================================================================
 // Route Protection Rules
 // ============================================================================

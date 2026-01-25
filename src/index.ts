@@ -68,6 +68,7 @@ export type {
     CustomProtectionRule,
     SessionKitConfig,
     AccessHooks,
+    SessionContext
 } from "./core/types";
 
 // ============================================================================

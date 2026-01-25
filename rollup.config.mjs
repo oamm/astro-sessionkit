@@ -1,4 +1,5 @@
 import typescript from "@rollup/plugin-typescript";
+import dts from "rollup-plugin-dts";
 
 export default [
     {
@@ -14,6 +15,7 @@ export default [
             preserveModules: true,
             preserveModulesRoot: "src",
             entryFileNames: "[name].js",
+            sourcemap: true,
         },
         external: [
             // Node.js built-ins
@@ -27,9 +29,46 @@ export default [
         plugins: [
             typescript({
                 tsconfig: "./tsconfig.json",
-                declaration: true,
-                declarationDir: "dist",
+                declaration: false,
+                declarationMap: false,
+                sourceMap: true,
             }),
         ]
+    },
+    {
+        input: "src/index.ts",
+        output: {
+            file: "dist/index.d.ts",
+            format: "esm",
+        },
+        external: ["astro", "astro:middleware"],
+        plugins: [dts()],
+    },
+    {
+        input: "src/server.ts",
+        output: {
+            file: "dist/server.d.ts",
+            format: "esm",
+        },
+        external: ["astro", "astro:middleware"],
+        plugins: [dts()],
+    },
+    {
+        input: "src/middleware.ts",
+        output: {
+            file: "dist/middleware.d.ts",
+            format: "esm",
+        },
+        external: ["astro", "astro:middleware"],
+        plugins: [dts()],
+    },
+    {
+        input: "src/guard.ts",
+        output: {
+            file: "dist/guard.d.ts",
+            format: "esm",
+        },
+        external: ["astro", "astro:middleware"],
+        plugins: [dts()],
     },
 ];
