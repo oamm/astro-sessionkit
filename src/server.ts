@@ -2,7 +2,7 @@
 // Public Server API - Use these in your Astro components/endpoints
 // ============================================================================
 
-import {getSessionContext} from "./core/context";
+import {getContextStore} from "./core/context";
 import {isValidSessionStructure} from "./core/validation";
 import type {Session} from "./core/types";
 import type {APIContext} from "astro";
@@ -20,7 +20,7 @@ import type {APIContext} from "astro";
  * ```
  */
 export function getSession(): Session | null {
-    const context = getSessionContext();
+    const context = getContextStore();
     return context?.session ?? null;
 }
 

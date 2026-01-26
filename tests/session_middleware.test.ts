@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from "vitest";
 import { sessionMiddleware } from "../src/core/sessionMiddleware";
-import { getSessionContext } from "../src/core/context";
+import { getContextStore } from "../src/core/context";
 import { mockContext, mockSession, mockNext, SESSION_KEY } from "./test-utils";
 
 describe("sessionMiddleware", () => {
@@ -15,7 +15,7 @@ describe("sessionMiddleware", () => {
     const next = mockNext();
     next.mockImplementation(() => {
       // Check context inside ALS scope
-      const context = getSessionContext();
+      const context = getContextStore();
       expect(context).toBeDefined();
       expect(context?.session).toEqual(session);
       expect(context?.session?.userId).toBe("123");
@@ -35,7 +35,7 @@ describe("sessionMiddleware", () => {
 
     const next = mockNext();
     next.mockImplementation(() => {
-      const context = getSessionContext();
+      const context = getContextStore();
       expect(context).toBeDefined();
       expect(context?.session).toBeNull();
 
@@ -57,7 +57,7 @@ describe("sessionMiddleware", () => {
 
     const next = mockNext();
     next.mockImplementation(() => {
-      const context = getSessionContext();
+      const context = getContextStore();
       expect(context).toBeDefined();
       expect(context?.session).toBeNull(); // Invalid session treated as null
 
@@ -80,7 +80,7 @@ describe("sessionMiddleware", () => {
 
     const next = mockNext();
     next.mockImplementation(() => {
-      const context = getSessionContext();
+      const context = getContextStore();
       expect(context?.session).toBeNull(); // Malformed session rejected
 
       return new Response("ok");
@@ -95,12 +95,12 @@ describe("sessionMiddleware", () => {
     const next = mockNext();
 
     // Before middleware
-    expect(getSessionContext()).toBeUndefined();
+    expect(getContextStore()).toBeUndefined();
 
     await sessionMiddleware(ctx as any, next as any);
 
     // After middleware completes
-    expect(getSessionContext()).toBeUndefined();
+    expect(getContextStore()).toBeUndefined();
   });
 
   it("passes through response from next()", async () => {
@@ -124,7 +124,7 @@ describe("sessionMiddleware", () => {
     const ctx1 = mockContext({ session: session1 });
     const next1 = mockNext();
     next1.mockImplementation(() => {
-      expect(getSessionContext()?.session?.userId).toBe("user-1");
+      expect(getContextStore()?.session?.userId).toBe("user-1");
       return new Response("ok");
     });
 
@@ -134,7 +134,7 @@ describe("sessionMiddleware", () => {
     const ctx2 = mockContext({ session: session2 });
     const next2 = mockNext();
     next2.mockImplementation(() => {
-      expect(getSessionContext()?.session?.userId).toBe("user-2");
+      expect(getContextStore()?.session?.userId).toBe("user-2");
       return new Response("ok");
     });
 
@@ -152,7 +152,7 @@ describe("sessionMiddleware", () => {
     const next = mockNext();
 
     next.mockImplementation(() => {
-      const context = getSessionContext();
+      const context = getContextStore();
       expect(context?.session?.customField).toBe("custom-value");
       expect(context?.session?.nested).toEqual({ data: "test" });
       return new Response("ok");
@@ -168,7 +168,7 @@ describe("sessionMiddleware", () => {
 
     const next = mockNext();
     next.mockImplementation(() => {
-      const context = getSessionContext();
+      const context = getContextStore();
       expect(context?.session).toBeNull();
       return new Response("ok");
     });

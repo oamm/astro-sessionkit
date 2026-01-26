@@ -4,7 +4,7 @@
 
 import {describe, it, expect, beforeEach} from "vitest";
 import {createGuardMiddleware} from "../src/core/guardMiddleware";
-import {runWithSessionContext} from "../src/core/context";
+import {runWithContext} from "../src/core/context";
 import {setConfig} from "../src/core/config";
 import {mockContext, mockSession, mockNext} from "./test-utils";
 
@@ -22,7 +22,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/admin"});
             const next = mockNext();
 
-            await runWithSessionContext({session: null}, async () => {
+            await runWithContext({session: null}, async () => {
                 await guard(ctx as any, next as any);
             });
 
@@ -41,7 +41,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/admin/users"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 await guard(ctx as any, next as any);
             });
 
@@ -59,7 +59,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/admin/users"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 const response = await guard(ctx as any, next as any) as Response;
                 expect(response.status).toBe(302);
                 expect(response.headers.get("Location")).toBe("/login");
@@ -77,7 +77,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/admin"});
             const next = mockNext();
 
-            await runWithSessionContext({session: null}, async () => {
+            await runWithContext({session: null}, async () => {
                 const response = await guard(ctx as any, next as any) as Response;
                 expect(response.status).toBe(302);
             });
@@ -97,7 +97,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/dashboard"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 await guard(ctx as any, next as any);
             });
 
@@ -114,7 +114,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/dashboard"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 const response = await guard(ctx as any, next as any) as Response;
                 expect(response.status).toBe(302);
             });
@@ -134,7 +134,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/settings"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 await guard(ctx as any, next as any);
             });
 
@@ -151,7 +151,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/settings"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 const response = await guard(ctx as any, next as any) as Response;
                 expect(response.status).toBe(302);
             });
@@ -173,7 +173,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/admin/users"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 await guard(ctx as any, next as any);
             });
 
@@ -190,7 +190,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/admin/users"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 const response = await guard(ctx as any, next as any) as Response;
                 expect(response.status).toBe(302);
             });
@@ -215,7 +215,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/premium/content"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 await guard(ctx as any, next as any);
             });
 
@@ -237,9 +237,8 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/premium/content"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 const response = await guard(ctx as any, next as any) as Response;
-                ;
                 expect(response.status).toBe(302);
             });
 
@@ -264,7 +263,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/special"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 await guard(ctx as any, next as any);
             });
 
@@ -290,7 +289,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/admin"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 const response = await guard(ctx as any, next as any) as Response;
                 expect(response.status).toBe(302);
                 expect(response.headers.get("Location")).toBe("/unauthorized");
@@ -309,7 +308,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/public"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 await guard(ctx as any, next as any);
             });
 
@@ -327,7 +326,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/settings"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 await guard(ctx as any, next as any);
             });
 
@@ -349,7 +348,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/admin"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 await guard(ctx as any, next as any);
             });
 
@@ -369,7 +368,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/settings"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 await guard(ctx as any, next as any);
             });
 
@@ -392,7 +391,7 @@ describe("guardMiddleware", () => {
             const ctx = mockContext({url: "http://localhost/special/page"});
             const next = mockNext();
 
-            await runWithSessionContext({session}, async () => {
+            await runWithContext({session}, async () => {
                 await guard(ctx as any, next as any);
             });
 

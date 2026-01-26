@@ -12,8 +12,8 @@ export interface ResolvedConfig {
     loginPath: string;
     protect: ProtectionRule[];
     access: Required<AccessHooks>;
-    runWithSessionContext?: <T>(context: SessionContext, fn: () => T) => T;
-    getSessionContext?: () => SessionContext | undefined;
+    runWithContext?: <T>(context: SessionContext, fn: () => T) => T;
+    getContextStore?: () => SessionContext | undefined;
 }
 
 let config: ResolvedConfig = {
@@ -24,8 +24,8 @@ let config: ResolvedConfig = {
         getPermissions: (session: Session | null) => session?.permissions ?? [],
         check: undefined as any, // Will be undefined but typed for convenience
     },
-    runWithSessionContext: undefined,
-    getSessionContext: undefined,
+    runWithContext: undefined,
+    getContextStore: undefined,
 };
 
 /**
@@ -70,8 +70,8 @@ export function setConfig(userConfig: SessionKitConfig): void {
             getPermissions: userConfig.access?.getPermissions ?? ((session) => session?.permissions ?? []),
             check: userConfig.access?.check as any,
         },
-        runWithSessionContext: userConfig.runWithSessionContext,
-        getSessionContext: userConfig.getSessionContext,
+        runWithContext: userConfig.runWithContext,
+        getContextStore: userConfig.getContextStore,
     };
 }
 

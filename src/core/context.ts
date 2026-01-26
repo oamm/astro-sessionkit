@@ -11,7 +11,7 @@ const als = new AsyncLocalStorage<SessionContext>();
 /**
  * Run a function with session context available
  */
-export function runWithSessionContext<T>(
+export function runWithContext<T>(
   context: SessionContext,
   fn: () => T
 ): T {
@@ -21,8 +21,8 @@ export function runWithSessionContext<T>(
 /**
  * Get the current session context (only available inside middleware chain)
  */
-export function getSessionContext(): SessionContext | undefined {
-  const customGetter = getConfig().getSessionContext;
+export function getContextStore(): SessionContext | undefined {
+  const customGetter = getConfig().getContextStore;
   if (customGetter) {
     return customGetter();
   }

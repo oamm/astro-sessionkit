@@ -3,7 +3,7 @@
 // ============================================================================
 
 import type {APIContext, MiddlewareHandler} from "astro";
-import { getSessionContext } from "./context";
+import { getContextStore } from "./context";
 import { getConfig } from "./config";
 import { matchesPattern } from "./matcher";
 import type { ProtectionRule, Session } from "./types";
@@ -70,7 +70,7 @@ export function createGuardMiddleware(): MiddlewareHandler {
     }
 
     const pathname = new URL(context.request.url).pathname;
-    const sessionContext = getSessionContext();
+    const sessionContext = getContextStore();
     const session = sessionContext?.session ?? null;
 
     // Find matching rule

@@ -15,7 +15,7 @@ import {
   clearSession,
   updateSession,
 } from "../src/server";
-import { runWithSessionContext } from "../src/core/context";
+import { runWithContext } from "../src/core/context";
 import { mockSession, mockContext, SESSION_KEY } from "./test-utils";
 
 describe("server API", () => {
@@ -23,7 +23,7 @@ describe("server API", () => {
     it("returns session when authenticated", async () => {
       const session = mockSession({ userId: "123" });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         const result = getSession();
         expect(result).toBe(session);
         expect(result?.userId).toBe("123");
@@ -31,7 +31,7 @@ describe("server API", () => {
     });
 
     it("returns null when not authenticated", async () => {
-      await runWithSessionContext({ session: null }, () => {
+      await runWithContext({ session: null }, () => {
         const result = getSession();
         expect(result).toBeNull();
       });
@@ -47,7 +47,7 @@ describe("server API", () => {
     it("returns session when authenticated", async () => {
       const session = mockSession({ userId: "123" });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         const result = requireSession();
         expect(result).toBe(session);
         expect(result.userId).toBe("123");
@@ -55,7 +55,7 @@ describe("server API", () => {
     });
 
     it("throws Response when not authenticated", async () => {
-      await runWithSessionContext({ session: null }, () => {
+      await runWithContext({ session: null }, () => {
         expect(() => requireSession()).toThrow(Response);
 
         try {
@@ -76,13 +76,13 @@ describe("server API", () => {
     it("returns true when session exists", async () => {
       const session = mockSession();
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(isAuthenticated()).toBe(true);
       });
     });
 
     it("returns false when no session", async () => {
-      await runWithSessionContext({ session: null }, () => {
+      await runWithContext({ session: null }, () => {
         expect(isAuthenticated()).toBe(false);
       });
     });
@@ -96,7 +96,7 @@ describe("server API", () => {
     it("returns true when user has the role", async () => {
       const session = mockSession({ role: "admin" });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasRole("admin")).toBe(true);
       });
     });
@@ -104,7 +104,7 @@ describe("server API", () => {
     it("returns false when user has different role", async () => {
       const session = mockSession({ role: "user" });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasRole("admin")).toBe(false);
       });
     });
@@ -115,7 +115,7 @@ describe("server API", () => {
         roles: ["moderator", "beta"],
       });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasRole("moderator")).toBe(true);
         expect(hasRole("beta")).toBe(true);
         expect(hasRole("admin")).toBe(false);
@@ -123,7 +123,7 @@ describe("server API", () => {
     });
 
     it("returns false when not authenticated", async () => {
-      await runWithSessionContext({ session: null }, () => {
+      await runWithContext({ session: null }, () => {
         expect(hasRole("admin")).toBe(false);
       });
     });
@@ -135,7 +135,7 @@ describe("server API", () => {
         permissions: ["posts:read", "posts:write"],
       });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasPermission("posts:read")).toBe(true);
         expect(hasPermission("posts:write")).toBe(true);
       });
@@ -146,7 +146,7 @@ describe("server API", () => {
         permissions: ["posts:read"],
       });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasPermission("posts:write")).toBe(false);
       });
     });
@@ -154,13 +154,13 @@ describe("server API", () => {
     it("returns false when permissions array is undefined", async () => {
       const session = mockSession({ permissions: undefined });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasPermission("posts:read")).toBe(false);
       });
     });
 
     it("returns false when not authenticated", async () => {
-      await runWithSessionContext({ session: null }, () => {
+      await runWithContext({ session: null }, () => {
         expect(hasPermission("posts:read")).toBe(false);
       });
     });
@@ -172,7 +172,7 @@ describe("server API", () => {
         permissions: ["posts:read", "posts:write", "posts:delete"],
       });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasAllPermissions("posts:read", "posts:write")).toBe(true);
         expect(hasAllPermissions("posts:read", "posts:write", "posts:delete")).toBe(true);
       });
@@ -183,7 +183,7 @@ describe("server API", () => {
         permissions: ["posts:read", "posts:write"],
       });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasAllPermissions("posts:read", "posts:delete")).toBe(false);
       });
     });
@@ -191,13 +191,13 @@ describe("server API", () => {
     it("returns true when checking zero permissions", async () => {
       const session = mockSession({ permissions: [] });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasAllPermissions()).toBe(true);
       });
     });
 
     it("returns false when not authenticated", async () => {
-      await runWithSessionContext({ session: null }, () => {
+      await runWithContext({ session: null }, () => {
         expect(hasAllPermissions("posts:read")).toBe(false);
       });
     });
@@ -209,7 +209,7 @@ describe("server API", () => {
         permissions: ["posts:read"],
       });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasAnyPermission("posts:read", "posts:write")).toBe(true);
         expect(hasAnyPermission("posts:write", "posts:read")).toBe(true);
       });
@@ -220,7 +220,7 @@ describe("server API", () => {
         permissions: ["posts:read"],
       });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasAnyPermission("posts:write", "posts:delete")).toBe(false);
       });
     });
@@ -228,13 +228,13 @@ describe("server API", () => {
     it("returns false when checking zero permissions", async () => {
       const session = mockSession({ permissions: ["posts:read"] });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasAnyPermission()).toBe(false);
       });
     });
 
     it("returns false when not authenticated", async () => {
-      await runWithSessionContext({ session: null }, () => {
+      await runWithContext({ session: null }, () => {
         expect(hasAnyPermission("posts:read", "posts:write")).toBe(false);
       });
     });
@@ -247,7 +247,7 @@ describe("server API", () => {
         nested: { data: "test" },
       });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         const result = getSession();
         expect(result?.customField).toBe("value");
         expect(result?.nested).toEqual({ data: "test" });
@@ -257,7 +257,7 @@ describe("server API", () => {
     it("handles empty permissions array", async () => {
       const session = mockSession({ permissions: [] });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasPermission("any")).toBe(false);
         expect(hasAllPermissions()).toBe(true);
         expect(hasAnyPermission("any")).toBe(false);
@@ -267,7 +267,7 @@ describe("server API", () => {
     it("handles empty roles array", async () => {
       const session = mockSession({ role: undefined, roles: [] });
 
-      await runWithSessionContext({ session }, () => {
+      await runWithContext({ session }, () => {
         expect(hasRole("admin")).toBe(false);
       });
     });

@@ -8,12 +8,12 @@ import { setConfig } from "../src/core/config";
 import { mockContext, mockNext, mockSession } from "./test-utils";
 import * as contextModule from "../src/core/context";
 
-describe("sessionMiddleware with custom runWithSessionContext", () => {
-  it("uses the built-in runWithSessionContext by default", async () => {
+describe("sessionMiddleware with custom runWithContext", () => {
+  it("uses the built-in runWithContext by default", async () => {
     // Reset config to defaults
     setConfig({});
     
-    const spy = vi.spyOn(contextModule, "runWithSessionContext");
+    const spy = vi.spyOn(contextModule, "runWithContext");
     const session = mockSession();
     const context = mockContext({ session });
     const next = mockNext();
@@ -24,11 +24,11 @@ describe("sessionMiddleware with custom runWithSessionContext", () => {
     spy.mockRestore();
   });
 
-  it("uses the custom runWithSessionContext from config if provided", async () => {
+  it("uses the custom runWithContext from config if provided", async () => {
     const customRunner = vi.fn((_:any, fn:any) => fn());
     
     setConfig({
-      runWithSessionContext: customRunner
+      runWithContext: customRunner
     });
 
     const session = mockSession();
