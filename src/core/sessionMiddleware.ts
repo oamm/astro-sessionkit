@@ -2,11 +2,11 @@
 // Session Middleware - Loads session into AsyncLocalStorage
 // ============================================================================
 
-import type { MiddlewareHandler } from "astro";
-import { runWithContext as defaultRunWithContext } from "./context";
-import { isValidSessionStructure } from "./validation";
-import type { Session } from "./types";
-import { getConfig } from "./config";
+import type {MiddlewareHandler} from "astro";
+import {runWithContext as defaultRunWithContext} from "./context";
+import {isValidSessionStructure} from "./validation";
+import type {Session} from "./types";
+import {getConfig} from "./config";
 
 /**
  * Session key used to store session in context.session
@@ -20,37 +20,42 @@ const SESSION_KEY = "__session__";
  * throughout the request via AsyncLocalStorage
  */
 export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
-  // Get session from context.session store
-  const rawSession = context.session?.get<Session>(SESSION_KEY) ?? null;
+    // Get session from context.session store
+    const rawSession = context.session?.get<Session>(SESSION_KEY) ?? null;
 
-  // Validate session structure if present
-  let session: Session | null = null;
+    // Validate session structure if present
+    let session: Session | null = null;
 
-  if (rawSession) {
-    if (isValidSessionStructure(rawSession)) {
-      session = rawSession;
-    } else {
-      // Invalid session structure - log warning and treat as unauthenticated
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn(
-            '[SessionKit] Invalid session structure detected. Session will be ignored. ' +
-            'Ensure context.session.set("__session__", ...) has the correct structure.'
-        );
-      }
-      session = null;
+    if (rawSession) {
+        if (isValidSessionStructure(rawSession)) {
+            session = rawSession;
+        } else {
+            // Invalid session structure - log warning and treat as unauthenticated
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn(
+                    '[SessionKit] Invalid session structure detected. Session will be ignored. ' +
+                    'Ensure context.session.set("__session__", ...) has the correct structure.'
+                );
+            }
+            session = null;
+        }
     }
-  }
 
-  // Run the rest of the request chain with session context
-  const config = getConfig();
+    // Run the rest of the request chain with session context
+    const config = getConfig();
 
-  // If getContextStore is provided, but runWithContext is NOT,
-  // we assume the user is managing the context at a superior level
-  // and we should NOT wrap the call in our default runner.
-  if (config.getContextStore && !config.runWithContext) {
-    return next();
-  }
+    // If getContextStore is provided, but runWithContext is NOT,
+    // we assume the user is managing the context at a superior level
+    // and we should NOT wrap the call in our default runner.
+    if (config.getContextStore && !config.runWithContext) {
+        const store = config.getContextStore();
+        if (store)
+            store.session = session;
+        else
+            console.error('[SessionKit] getContextStore returned undefined, cannot set session');
+        return next();
+    }
 
-  const runner = config.runWithContext ?? defaultRunWithContext;
-  return runner({ session }, () => next());
+    const runner = config.runWithContext ?? defaultRunWithContext;
+    return runner({session}, () => next());
 };
