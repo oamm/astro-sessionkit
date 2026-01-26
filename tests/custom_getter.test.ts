@@ -13,9 +13,11 @@ describe("custom getContextStore", () => {
     it("uses custom getContextStore when provided", () => {
         const mockSession: Session = {userId: "custom-user"};
         const customGetter = vi.fn(() => ({session: mockSession}));
+        const customSetter = vi.fn();
 
         setConfig({
             getContextStore: customGetter,
+            setContextStore: customSetter,
         });
 
         const context = getContextStore();
@@ -32,9 +34,11 @@ describe("custom getContextStore", () => {
     it("bypasses default runner when getContextStore is provided but runWithContext is not", async () => {
         const mockSession: Session = {userId: "custom-user"};
         const customGetter = vi.fn(() => ({session: mockSession}));
+        const customSetter = vi.fn();
 
         setConfig({
             getContextStore: customGetter,
+            setContextStore: customSetter,
         });
 
         const next = vi.fn(() => Promise.resolve(new Response("ok")));
@@ -56,10 +60,12 @@ describe("custom getContextStore", () => {
     it("uses custom runner even if custom getter is provided", async () => {
         const mockSession: Session = {userId: "custom-user"};
         const customGetter = vi.fn(() => ({session: mockSession}));
+        const customSetter = vi.fn();
         const customRunner = vi.fn((_: any, fn: any) => fn());
 
         setConfig({
             getContextStore: customGetter,
+            setContextStore: customSetter,
             runWithContext: customRunner,
         });
 

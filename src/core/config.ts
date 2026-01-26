@@ -14,6 +14,7 @@ export interface ResolvedConfig {
     access: Required<AccessHooks>;
     runWithContext?: <T>(context: SessionContext, fn: () => T) => T;
     getContextStore?: () => SessionContext | undefined;
+    setContextStore?: (context: SessionContext) => void;
 }
 
 let config: ResolvedConfig = {
@@ -26,6 +27,7 @@ let config: ResolvedConfig = {
     },
     runWithContext: undefined,
     getContextStore: undefined,
+    setContextStore: undefined,
 };
 
 /**
@@ -61,6 +63,13 @@ export function setConfig(userConfig: SessionKitConfig): void {
         }
     }
 
+    // Validate context store getter/setter pair
+    if ((userConfig.getContextStore && !userConfig.setContextStore) || (!userConfig.getContextStore && userConfig.setContextStore)) {
+        throw new Error(
+            '[SessionKit] Both getContextStore and setContextStore must be provided together if using custom context storage.'
+        );
+    }
+
     // Store validated config
     config = {
         loginPath,
@@ -72,6 +81,7 @@ export function setConfig(userConfig: SessionKitConfig): void {
         },
         runWithContext: userConfig.runWithContext,
         getContextStore: userConfig.getContextStore,
+        setContextStore: userConfig.setContextStore,
     };
 }
 

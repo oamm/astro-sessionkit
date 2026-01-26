@@ -120,4 +120,10 @@ export interface SessionKitConfig {
    * Use this to provide your own way to retrieve the session context
    */
   getContextStore?: () => SessionContext | undefined;
+
+  /**
+   * Custom session context setter (optional)
+   * Use this to provide your own way to initialize the session context
+   */
+  setContextStore?: (context: SessionContext) => void;
 }

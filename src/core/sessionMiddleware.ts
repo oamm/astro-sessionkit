@@ -48,9 +48,12 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
     // we assume the user is managing the context at a superior level
     // and we should NOT wrap the call in our default runner.
     if (config.getContextStore && !config.runWithContext) {
+        // Initialize context store if setter is provided
         const store = config.getContextStore();
         if (store)
             store.session = session;
+        else if (config.setContextStore)
+            config.setContextStore({session});
         else
             console.error('[SessionKit] getContextStore returned undefined, cannot set session');
         return next();
