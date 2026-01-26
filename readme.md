@@ -322,7 +322,7 @@ if (hasRolePermission('admin', 'delete users')) {
 Require a specific role:
 
 ```ts
-{ pattern: '/admin/**', role: 'admin' }
+const rule = { pattern: '/admin/**', role: 'admin' };
 ```
 
 #### By Multiple Roles
@@ -330,7 +330,7 @@ Require a specific role:
 User must have ONE of these roles:
 
 ```ts
-{ pattern: '/dashboard', roles: ['user', 'admin', 'moderator'] }
+const rule = { pattern: '/dashboard', roles: ['user', 'admin', 'moderator'] };
 ```
 
 #### By Permission
@@ -338,7 +338,7 @@ User must have ONE of these roles:
 Require a specific permission:
 
 ```ts
-{ pattern: '/settings', permission: 'settings:write' }
+const rule = { pattern: '/settings', permission: 'settings:write' };
 ```
 
 #### By Multiple Permissions
@@ -421,6 +421,25 @@ sessionkit({
       // Your custom logic
       return session?.customField === 'allowed';
     }
+  }
+})
+```
+
+### Custom Context Store
+
+By default, SessionKit uses Node's `AsyncLocalStorage` to manage the session context. In some environments (like certain edge runtimes), you might need to provide your own context management.
+
+```ts
+sessionkit({
+  // Provide a custom way to run code within a context
+  runWithContext: (context, fn) => {
+    // Your custom context implementation
+    return myCustomStorage.run(context, fn);
+  },
+
+  // Provide a custom way to retrieve the current context
+  getContextStore: () => {
+    return myCustomStorage.getStore();
   }
 })
 ```
@@ -597,7 +616,7 @@ export const GET: APIRoute = async () => {
 - Session expiration
 - CSRF protection
 
-These are your responsibility. See [SECURITY.md](./SECURITY.md) for a complete security guide.
+These are your responsibility. See [SECURITY.md](./security.md) for a complete security guide.
 
 ### Quick Security Checklist
 

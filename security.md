@@ -273,6 +273,24 @@ const session = getSession();
 <div set:html={sanitizeHtml(session?.bio)}></div> <!-- ✅ Safe -->
 ```
 
+### 7. 🛡️ User Role Validation
+
+Always use the server-side helpers to validate user roles and permissions. Do not rely on client-side state or hidden inputs.
+
+```ts
+import { hasRole, hasPermission, hasRolePermission } from 'astro-sessionkit/server';
+
+// ✅ SAFE: Validation happens on the server using the trusted session
+if (hasRole('admin')) {
+  // Perform admin action
+}
+
+// ✅ SAFE: Complex permission checks
+if (hasRolePermission('editor', 'publish:posts')) {
+  // Perform action
+}
+```
+
 ---
 
 ## Security Checklist
