@@ -11,6 +11,7 @@ import {
   hasPermission,
   hasAllPermissions,
   hasAnyPermission,
+  hasRolePermission,
   setSession,
   clearSession,
   updateSession,
@@ -236,6 +237,70 @@ describe("server API", () => {
     it("returns false when not authenticated", async () => {
       await runWithContext({ session: null }, () => {
         expect(hasAnyPermission("posts:read", "posts:write")).toBe(false);
+      });
+    });
+  });
+
+  describe("hasRolePermission", () => {
+    it("returns true when user has both the role and the permission", async () => {
+      const session = mockSession({
+        role: "admin",
+        permissions: ["users:delete"]
+      });
+
+      await runWithContext({ session }, () => {
+        expect(hasRolePermission("admin", "users:delete")).toBe(true);
+      });
+    });
+
+    it("returns false when user has the role but lacks the permission", async () => {
+      const session = mockSession({
+        role: "admin",
+        permissions: ["users:read"]
+      });
+
+      await runWithContext({ session }, () => {
+        expect(hasRolePermission("admin", "users:delete")).toBe(false);
+      });
+    });
+
+    it("returns false when user lacks the role but has the permission", async () => {
+      const session = mockSession({
+        role: "user",
+        permissions: ["users:delete"]
+      });
+
+      await runWithContext({ session }, () => {
+        expect(hasRolePermission("admin", "users:delete")).toBe(false);
+      });
+    });
+
+    it("returns false when user lacks both", async () => {
+      const session = mockSession({
+        role: "user",
+        permissions: ["users:read"]
+      });
+
+      await runWithContext({ session }, () => {
+        expect(hasRolePermission("admin", "users:delete")).toBe(false);
+      });
+    });
+
+    it("checks secondary roles as well", async () => {
+      const session = mockSession({
+        role: "user",
+        roles: ["editor"],
+        permissions: ["posts:edit"]
+      });
+
+      await runWithContext({ session }, () => {
+        expect(hasRolePermission("editor", "posts:edit")).toBe(true);
+      });
+    });
+
+    it("returns false when not authenticated", async () => {
+      await runWithContext({ session: null }, () => {
+        expect(hasRolePermission("admin", "users:delete")).toBe(false);
       });
     });
   });

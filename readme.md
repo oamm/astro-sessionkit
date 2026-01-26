@@ -301,6 +301,18 @@ if (hasAnyPermission('posts:delete', 'admin:panel')) {
 }
 ```
 
+#### `hasRolePermission(role: string, permission: string)`
+
+Check if user has a specific role AND a specific permission.
+
+```ts
+import { hasRolePermission } from 'astro-sessionkit/server';
+
+if (hasRolePermission('admin', 'delete users')) {
+  // User is admin AND has 'delete users' permission
+}
+```
+
 ## Route Protection
 
 ### Protection Rules

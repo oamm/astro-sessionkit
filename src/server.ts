@@ -104,6 +104,26 @@ export function hasAnyPermission(...permissions: string[]): boolean {
 // ============================================================================
 
 /**
+ * Check if a specific role has a specific permission.
+ *
+ * This checks if the current user has the specified role and if that role
+ * is associated with the specified permission.
+ *
+ * @param role - The role to check
+ * @param permission - The permission to check
+ *
+ * @example
+ * ```ts
+ * if (hasRolePermission("admin", "delete users")) {
+ *   // ...
+ * }
+ * ```
+ */
+export function hasRolePermission(role: string, permission: string): boolean {
+    return hasRole(role) && hasPermission(permission);
+}
+
+/**
  * Set session data in context.locals.session
  *
  * Use this after successful authentication to register the user's session.
