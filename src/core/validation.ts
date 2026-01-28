@@ -83,7 +83,7 @@ export function isValidSessionStructure(input: unknown): input is Session {
  */
 export function isValidPattern(pattern: string): boolean {
 
-    if (pattern.length === 0) return false;
+    if (typeof pattern !== 'string' || pattern.length === 0) return false;
 
     // Length limit
     if (pattern.length > 1000) return false;
@@ -119,6 +119,8 @@ export function isValidPattern(pattern: string): boolean {
  * Validate redirect path (open redirect protection)
  */
 export function isValidRedirectPath(path: string): boolean {
+
+    if (typeof path !== 'string') return false;
 
     // Reasonable length limit
     if (path.length === 0 || path.length > 500) return false;
