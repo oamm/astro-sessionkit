@@ -82,7 +82,7 @@ export function isValidSessionStructure(input: unknown): input is Session {
  * Validate route patterns to prevent ReDoS attacks
  */
 export function isValidPattern(pattern: string): boolean {
-    if (typeof pattern !== "string") return false;
+
     if (pattern.length === 0) return false;
 
     // Length limit
@@ -119,7 +119,6 @@ export function isValidPattern(pattern: string): boolean {
  * Validate redirect path (open redirect protection)
  */
 export function isValidRedirectPath(path: string): boolean {
-    if (typeof path !== "string") return false;
 
     // Reasonable length limit
     if (path.length === 0 || path.length > 500) return false;
@@ -130,7 +129,7 @@ export function isValidRedirectPath(path: string): boolean {
 
     // Extra hardening: reject anything that looks like a URL scheme
     // (e.g. "http://", "https://", "javascript:", "data:", etc.)
-    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path)) return false;
+    return !/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path);
 
-    return true;
+
 }
