@@ -16,12 +16,26 @@ async function checkRule(rule: ProtectionRule, session: Session | null): Promise
 
   // Custom check overrides everything
   if (access.check) {
-    return await Promise.resolve(access.check(rule, session));
+    try {
+      return await access.check(rule, session);
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[SessionKit] Error in custom access check hook:', error);
+      }
+      return false;
+    }
   }
 
   // Custom allow function
   if ("allow" in rule) {
-    return await Promise.resolve(rule.allow(session));
+    try {
+      return await rule.allow(session);
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[SessionKit] Error in custom rule allow function:', error);
+      }
+      return false;
+    }
   }
 
   // Must be authenticated for all other checks
@@ -69,7 +83,13 @@ export function createGuardMiddleware(): MiddlewareHandler {
       return next();
     }
 
-    const pathname = new URL(context.request.url).pathname;
+    let pathname: string;
+    try {
+      pathname = new URL(context.request.url).pathname;
+    } catch {
+      // Fallback if URL is invalid (unlikely in Astro)
+      pathname = "/";
+    }
     const sessionContext = getContextStore();
     const session = sessionContext?.session ?? null;
 

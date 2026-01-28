@@ -19,10 +19,20 @@ function globToRegex(pattern: string): RegExp {
       const isAtEnd = i + 2 === pattern.length;
       const prevIsSlash = i > 0 && pattern[i - 1] === "/";
 
-      // Special-case "/**" at end: matches "/admin" and anything under it
-      if (isAtEnd && prevIsSlash) {
-        if (regex.endsWith("/")) regex = regex.slice(0, -1);
-        regex += "(?:/.*)?";
+      if (prevIsSlash) {
+        // Handle "/**"
+        if (isAtEnd) {
+          // "/**" at end matches everything from that point
+          if (regex.endsWith("/")) regex = regex.slice(0, -1);
+          regex += "(?:/.*)?";
+        } else if (pattern[i + 2] === "/") {
+          // "/**/" matches zero or more segments
+          if (regex.endsWith("/")) regex = regex.slice(0, -1);
+          regex += "(?:/.*)?";
+          i += 1; // skip one extra for the trailing slash
+        } else {
+          regex += ".*";
+        }
       } else {
         regex += ".*";
       }
@@ -33,7 +43,7 @@ function globToRegex(pattern: string): RegExp {
 
     // Handle *
     if (char === "*") {
-      // one-or-more segments (your original behavior)
+      // one or more segments (to maintain backward compatibility with previous tests)
       regex += "[^/]+(?:/[^/]+)*";
       i += 1;
       continue;

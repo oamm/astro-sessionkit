@@ -37,7 +37,7 @@ export function isValidSessionStructure(input: unknown): input is Session {
         }
     }
 
-    if (session.role !== undefined) {
+    if (session.role !== undefined && session.role !== null) {
         if (typeof session.role !== 'string') {
             return false;
         }
@@ -47,7 +47,7 @@ export function isValidSessionStructure(input: unknown): input is Session {
         }
     }
 
-    if (session.roles !== undefined) {
+    if (session.roles !== undefined && session.roles !== null) {
         if (!Array.isArray(session.roles)) {
             return false;
         }
@@ -61,7 +61,7 @@ export function isValidSessionStructure(input: unknown): input is Session {
         }
     }
 
-    if (session.permissions !== undefined) {
+    if (session.permissions !== undefined && session.permissions !== null) {
         if (!Array.isArray(session.permissions)) {
             return false;
         }

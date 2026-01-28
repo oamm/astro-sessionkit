@@ -11,35 +11,41 @@ import {isValidPattern, isValidRedirectPath} from "./validation";
 export interface ResolvedConfig {
     loginPath: string;
     protect: ProtectionRule[];
-    access: Required<AccessHooks>;
-    runWithContext?: <T>(context: SessionContext, fn: () => T) => T;
+    access: Required<Omit<AccessHooks, "check">> & {
+        check?: AccessHooks["check"];
+    };
+    runWithContext?: <T>(context: SessionContext, fn: () => T) => T | Promise<T>;
     getContextStore?: () => SessionContext | undefined;
     setContextStore?: (context: SessionContext) => void;
 }
 
-let config: ResolvedConfig = {
+const DEFAULT_CONFIG: ResolvedConfig = {
     loginPath: "/login",
     protect: [],
     access: {
         getRole: (session: Session | null) => session?.role ?? null,
         getPermissions: (session: Session | null) => session?.permissions ?? [],
-        check: undefined as any, // Will be undefined but typed for convenience
+        check: undefined,
     },
-    runWithContext: undefined,
-    getContextStore: undefined,
-    setContextStore: undefined,
 };
+
+let config: ResolvedConfig = { ...DEFAULT_CONFIG };
 
 /**
  * Set configuration (called by integration)
  */
 export function setConfig(userConfig: SessionKitConfig): void {
-    // Validate loginPath
-    const loginPath = userConfig.loginPath ?? "/login";
-    if (!isValidRedirectPath(loginPath)) {
-        throw new Error(
-            `[SessionKit] Invalid loginPath: "${loginPath}". Must start with / and be less than 500 characters.`
-        );
+    // Start with default config
+    const newConfig: ResolvedConfig = { ...DEFAULT_CONFIG };
+
+    // Validate and set loginPath
+    if (userConfig.loginPath !== undefined) {
+        if (!isValidRedirectPath(userConfig.loginPath)) {
+            throw new Error(
+                `[SessionKit] Invalid loginPath: "${userConfig.loginPath}". Must start with / and be less than 500 characters.`
+            );
+        }
+        newConfig.loginPath = userConfig.loginPath;
     }
 
     // Validate protection rules
@@ -61,6 +67,7 @@ export function setConfig(userConfig: SessionKitConfig): void {
                 );
             }
         }
+        newConfig.protect = [...userConfig.protect];
     }
 
     // Validate context store getter/setter pair
@@ -70,19 +77,22 @@ export function setConfig(userConfig: SessionKitConfig): void {
         );
     }
 
-    // Store validated config
-    config = {
-        loginPath,
-        protect: userConfig.protect ?? [],
-        access: {
-            getRole: userConfig.access?.getRole ?? ((session) => session?.role ?? null),
-            getPermissions: userConfig.access?.getPermissions ?? ((session) => session?.permissions ?? []),
-            check: userConfig.access?.check as any,
-        },
-        runWithContext: userConfig.runWithContext,
-        getContextStore: userConfig.getContextStore,
-        setContextStore: userConfig.setContextStore,
-    };
+    // Set access hooks
+    if (userConfig.access) {
+        newConfig.access = {
+            getRole: userConfig.access.getRole ?? DEFAULT_CONFIG.access.getRole,
+            getPermissions: userConfig.access.getPermissions ?? DEFAULT_CONFIG.access.getPermissions,
+            check: userConfig.access.check,
+        };
+    }
+
+    // Set context hooks
+    newConfig.runWithContext = userConfig.runWithContext;
+    newConfig.getContextStore = userConfig.getContextStore;
+    newConfig.setContextStore = userConfig.setContextStore;
+
+    // Atomic update
+    config = Object.freeze(newConfig);
 }
 
 /**
