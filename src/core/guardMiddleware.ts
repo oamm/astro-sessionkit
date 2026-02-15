@@ -94,37 +94,44 @@ export function createGuardMiddleware(): MiddlewareHandler {
     // Find matching rule
     const rule = protect.find((r) => matchesPattern(r.pattern, pathname));
     
+    logger.debug(`[Guard] Pathname: ${pathname}, Found rule: ${rule ? JSON.stringify(rule) : 'none'}, GlobalProtect: ${globalProtect}`);
+
     // No matching rule - check global protection
     if (!rule) {
       if (globalProtect) {
         // Skip if path is in exclude list
         if (exclude.some((pattern) => matchesPattern(pattern, pathname))) {
+          logger.debug(`[GlobalProtect] Skipping ${pathname} because it matches an exclude pattern`);
           return next();
         }
         
         // Skip if it's the login page itself (to avoid redirect loops)
         if (pathname === loginPath) {
+          logger.debug(`[GlobalProtect] Skipping ${pathname} because it is the loginPath`);
           return next();
         }
 
-    // Require valid session
-    if (!session || !isValidSessionStructure(session)) {
-      logger.debug(`[GlobalProtect] Redirecting to ${loginPath} because session is ${session ? 'invalid' : 'missing'}`);
-      return context.redirect(loginPath);
+        // Require valid session
+        if (!session || !isValidSessionStructure(session)) {
+          logger.debug(`[GlobalProtect] Redirecting to ${loginPath} because session is ${session ? 'invalid' : 'missing'}`);
+          return context.redirect(loginPath);
+        }
+      }
+      
+      logger.debug(`[GlobalProtect] Allowing ${pathname} because session is valid or globalProtect is false`);
+      return next();
     }
-  }
-  return next();
-}
 
-// Check if access is allowed
-const allowed = await checkRule(rule, session);
+    // Check if access is allowed
+    const allowed = await checkRule(rule, session);
 
-if (!allowed) {
-  const redirectTo = rule.redirectTo ?? loginPath;
-  logger.debug(`[Guard] Redirecting to ${redirectTo} because access was denied by rule:`, rule);
-  return context.redirect(redirectTo);
-}
+    if (!allowed) {
+      const redirectTo = rule.redirectTo ?? loginPath;
+      logger.debug(`[Guard] Redirecting to ${redirectTo} because access was denied by rule:`, rule);
+      return context.redirect(redirectTo);
+    }
 
+    logger.debug(`[Guard] Allowing ${pathname} because access was granted by rule:`, rule);
     return next();
   };
 }
