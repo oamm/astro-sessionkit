@@ -29,3 +29,13 @@ export function warn(message: string, ...args: any[]): void {
     console.warn(`[SessionKit] ${message}`, ...args);
   }
 }
+
+/**
+ * Log info message. Always logs unless in production, but can be forced via debug flag.
+ */
+export function info(message: string, ...args: any[]): void {
+  const { debug } = getConfig();
+  if (debug || process.env.NODE_ENV !== 'production') {
+    console.log(`[SessionKit] ${message}`, ...args);
+  }
+}

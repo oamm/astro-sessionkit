@@ -4,6 +4,7 @@
 
 import type {SessionKitConfig, AccessHooks, ProtectionRule, Session, SessionContext} from "./types";
 import {isValidPattern, isValidRedirectPath} from "./validation";
+import * as logger from "./logger";
 
 /**
  * Internal config with defaults applied
@@ -96,21 +97,15 @@ export function setConfig(userConfig: SessionKitConfig): void {
         const anyAccess = userConfig.access as any;
         if (anyAccess.globalProtect !== undefined && userConfig.globalProtect === undefined) {
             newConfig.globalProtect = anyAccess.globalProtect;
-            if (process.env.NODE_ENV !== 'production') {
-                console.warn('[SessionKit] Deprecation: globalProtect should be at the top level of configuration, not inside "access".');
-            }
+            logger.warn('Deprecation: globalProtect should be at the top level of configuration, not inside "access".');
         }
         if (anyAccess.exclude !== undefined && userConfig.exclude === undefined) {
             newConfig.exclude = anyAccess.exclude;
-            if (process.env.NODE_ENV !== 'production') {
-                console.warn('[SessionKit] Deprecation: exclude should be at the top level of configuration, not inside "access".');
-            }
+            logger.warn('Deprecation: exclude should be at the top level of configuration, not inside "access".');
         }
         if (anyAccess.debug !== undefined && userConfig.debug === undefined) {
             newConfig.debug = anyAccess.debug;
-            if (process.env.NODE_ENV !== 'production') {
-                console.warn('[SessionKit] Deprecation: debug should be at the top level of configuration, not inside "access".');
-            }
+            logger.warn('Deprecation: debug should be at the top level of configuration, not inside "access".');
         }
     }
 

@@ -8,6 +8,7 @@ import { getConfig } from "./config";
 import { matchesPattern } from "./matcher";
 import type { ProtectionRule, Session } from "./types";
 import { isValidSessionStructure } from "./validation";
+import * as logger from "./logger";
 
 /**
  * Check if session satisfies a protection rule
@@ -20,9 +21,7 @@ async function checkRule(rule: ProtectionRule, session: Session | null): Promise
     try {
       return await access.check(rule, session);
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('[SessionKit] Error in custom access check hook:', error);
-      }
+      logger.error('Error in custom access check hook:', error);
       return false;
     }
   }
@@ -32,9 +31,7 @@ async function checkRule(rule: ProtectionRule, session: Session | null): Promise
     try {
       return await rule.allow(session);
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('[SessionKit] Error in custom rule allow function:', error);
-      }
+      logger.error('Error in custom rule allow function:', error);
       return false;
     }
   }
@@ -112,9 +109,7 @@ export function createGuardMiddleware(): MiddlewareHandler {
 
     // Require valid session
     if (!session || !isValidSessionStructure(session)) {
-      if (process.env.NODE_ENV !== 'production' && getConfig().debug) {
-        console.debug(`[SessionKit] [GlobalProtect] Redirecting to ${loginPath} because session is ${session ? 'invalid' : 'missing'}`);
-      }
+      logger.debug(`[GlobalProtect] Redirecting to ${loginPath} because session is ${session ? 'invalid' : 'missing'}`);
       return context.redirect(loginPath);
     }
   }
@@ -126,9 +121,7 @@ const allowed = await checkRule(rule, session);
 
 if (!allowed) {
   const redirectTo = rule.redirectTo ?? loginPath;
-  if (process.env.NODE_ENV !== 'production' && getConfig().debug) {
-    console.debug(`[SessionKit] [Guard] Redirecting to ${redirectTo} because access was denied by rule:`, rule);
-  }
+  logger.debug(`[Guard] Redirecting to ${redirectTo} because access was denied by rule:`, rule);
   return context.redirect(redirectTo);
 }
 
