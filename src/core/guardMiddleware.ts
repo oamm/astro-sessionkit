@@ -110,21 +110,27 @@ export function createGuardMiddleware(): MiddlewareHandler {
           return next();
         }
 
-        // Require valid session
-        if (!session || !isValidSessionStructure(session)) {
-          return context.redirect(loginPath);
-        }
+    // Require valid session
+    if (!session || !isValidSessionStructure(session)) {
+      if (process.env.NODE_ENV !== 'production' && getConfig().debug) {
+        console.debug(`[SessionKit] [GlobalProtect] Redirecting to ${loginPath} because session is ${session ? 'invalid' : 'missing'}`);
       }
-      return next();
+      return context.redirect(loginPath);
     }
+  }
+  return next();
+}
 
-    // Check if access is allowed
-    const allowed = await checkRule(rule, session);
+// Check if access is allowed
+const allowed = await checkRule(rule, session);
 
-    if (!allowed) {
-      const redirectTo = rule.redirectTo ?? loginPath;
-      return context.redirect(redirectTo);
-    }
+if (!allowed) {
+  const redirectTo = rule.redirectTo ?? loginPath;
+  if (process.env.NODE_ENV !== 'production' && getConfig().debug) {
+    console.debug(`[SessionKit] [Guard] Redirecting to ${redirectTo} because access was denied by rule:`, rule);
+  }
+  return context.redirect(redirectTo);
+}
 
     return next();
   };
