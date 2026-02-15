@@ -95,6 +95,10 @@ export function createGuardMiddleware(): MiddlewareHandler {
     const sessionContext = getContextStore();
     const session = sessionContext?.session ?? null;
 
+    if (getConfig().debug) {
+      logger.debug(`[Guard] Session retrieved from store: ${session ? 'exists' : 'null'}`);
+    }
+
     // Find matching rule
     const rule = protect.find((r) => matchesPattern(r.pattern, pathname));
     

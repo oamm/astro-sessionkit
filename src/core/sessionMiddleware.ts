@@ -44,15 +44,29 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
     // Run the rest of the request chain with session context
     const config = getConfig();
 
+    if (config.debug) {
+        logger.debug('[SessionMiddleware] Initializing context. Custom hooks present:', {
+            getContextStore: !!config.getContextStore,
+            setContextStore: !!config.setContextStore,
+            runWithContext: !!config.runWithContext
+        });
+    }
+
     // If getContextStore is provided, but runWithContext is NOT,
     // we assume the user is managing the context at a superior level
     // and we should NOT wrap the call in our default runner.
     if (config.getContextStore && !config.runWithContext) {
         // Initialize context store if setter is provided
         const store = config.getContextStore();
+        if (config.debug) {
+            logger.debug('[SessionMiddleware] Custom getContextStore returned:', !!store);
+        }
         if (store) {
             store.session = session;
         } else if (config.setContextStore) {
+            if (config.debug) {
+                logger.debug('[SessionMiddleware] Calling custom setContextStore');
+            }
             config.setContextStore({session});
         } else {
             logger.error('getContextStore returned undefined, cannot set session');
@@ -60,6 +74,9 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
         return next();
     }
 
+    if (config.debug) {
+        logger.debug('[SessionMiddleware] Using' + (config.runWithContext ? ' custom ' : ' default ') + 'runner');
+    }
     const runner = config.runWithContext ?? defaultRunWithContext;
     return runner({session}, () => next());
 };

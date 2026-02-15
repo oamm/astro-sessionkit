@@ -19,12 +19,37 @@ export function runWithContext<T>(
 }
 
 /**
- * Get the current session context (only available inside middleware chain)
+ * Get current Astro context (from middleware binding or explicit)
  */
-export function getContextStore(): SessionContext | undefined {
-  const customGetter = getConfig().getContextStore;
-  if (customGetter) {
-    return customGetter();
+export function getContextStore(): SessionContext {
+  const config = getConfig();
+  const getStore = config.getContextStore;
+  const context = (config as any).context || als;
+
+  const store = getStore
+      ? getStore()
+      : (context as AsyncLocalStorage<SessionContext>).getStore();
+
+  if (!store) {
+    throw new Error(
+        'Astro context not found. Make sure to use api.middleware() to bind context automatically.'
+    );
   }
-  return als.getStore();
+
+  return store;
+}
+
+/**
+ * Check if context is available
+ */
+export function hasContext(): boolean {
+  const config = getConfig();
+  const getStore = config.getContextStore;
+  const context = (config as any).context || als;
+
+  const store = getStore
+      ? getStore()
+      : (context as AsyncLocalStorage<SessionContext>).getStore();
+
+  return !!store;
 }
