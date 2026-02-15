@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import { getSession } from 'astro-sessionkit/server';
 
 const session = getSession();
-if (session) return Astro.redirect('/dashboard');
+if (session) return Astro.redirect('/');
 ---
 
 <Layout>

@@ -271,6 +271,48 @@ describe("guardMiddleware", () => {
         });
     });
 
+    describe("login page redirection", () => {
+        it("redirects authenticated users away from login page to / when globalProtect is enabled", async () => {
+            setConfig({
+                loginPath: "/login",
+                globalProtect: true,
+                exclude: ["/"]
+            });
+
+            const session = mockSession();
+            const guard = createGuardMiddleware();
+            const ctx = mockContext({url: "http://localhost/login"});
+            const next = mockNext();
+
+            await runWithContext({session}, async () => {
+                const response = await guard(ctx as any, next as any) as Response;
+                expect(response.status).toBe(302);
+                expect(response.headers.get("Location")).toBe("/");
+            });
+            
+            expect(next).not.toHaveBeenCalled();
+        });
+
+        it("allows unauthenticated users to stay on login page", async () => {
+            setConfig({
+                loginPath: "/login",
+                globalProtect: true,
+                exclude: ["/"]
+            });
+
+            const session = null;
+            const guard = createGuardMiddleware();
+            const ctx = mockContext({url: "http://localhost/login"});
+            const next = mockNext();
+
+            await runWithContext({session}, async () => {
+                await guard(ctx as any, next as any);
+            });
+            
+            expect(next).toHaveBeenCalled();
+        });
+    });
+
     describe("custom redirect paths", () => {
         it("redirects to rule-specific path", async () => {
             setConfig({

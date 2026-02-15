@@ -123,6 +123,14 @@ export function createGuardMiddleware(): MiddlewareHandler {
 
             // Skip if it's the login page itself (to avoid redirect loops)
             if (pathname === loginPath) {
+                // NEW: If session is already present, redirect to home (/)
+                if (session && isValidSessionStructure(session)) {
+                    if (debug) {
+                        logger.debug(`[GlobalProtect] Redirecting ${pathname} to / because session is already present`);
+                    }
+                    return context.redirect('/');
+                }
+
                 if (debug) {
                     logger.debug(`[GlobalProtect] Skipping ${pathname} because it is the loginPath`);
                 }
