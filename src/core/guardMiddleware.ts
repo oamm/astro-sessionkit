@@ -76,11 +76,6 @@ export function createGuardMiddleware(): MiddlewareHandler {
   return async (context : APIContext, next) => {
     const { protect, loginPath, globalProtect, exclude } = getConfig();
     
-    // No rules configured and no global protect - skip
-    if (protect.length === 0 && !globalProtect) {
-      return next();
-    }
-
     let pathname: string;
     try {
       pathname = new URL(context.request.url).pathname;
@@ -88,13 +83,23 @@ export function createGuardMiddleware(): MiddlewareHandler {
       // Fallback if URL is invalid (unlikely in Astro)
       pathname = "/";
     }
+
+    logger.debug(`[Guard] Pathname: ${pathname}, GlobalProtect: ${globalProtect}, Rules: ${protect.length}`);
+
+    // No rules configured and no global protect - skip
+    if (protect.length === 0 && !globalProtect) {
+      return next();
+    }
+
     const sessionContext = getContextStore();
     const session = sessionContext?.session ?? null;
 
     // Find matching rule
     const rule = protect.find((r) => matchesPattern(r.pattern, pathname));
     
-    logger.debug(`[Guard] Pathname: ${pathname}, Found rule: ${rule ? JSON.stringify(rule) : 'none'}, GlobalProtect: ${globalProtect}`);
+    if (rule) {
+      logger.debug(`[Guard] Found matching rule for ${pathname}:`, rule);
+    }
 
     // No matching rule - check global protection
     if (!rule) {

@@ -1,6 +1,6 @@
 {
   "name": "astro-sessionkit",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "Simple session access and route protection for Astro applications",
   "type": "module",
   "main": "./dist/index.js",

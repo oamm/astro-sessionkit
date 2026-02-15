@@ -6,7 +6,7 @@ import { getConfig } from "./config";
 export function debug(message: string, ...args: any[]): void {
   const { debug } = getConfig();
   if (debug) {
-    console.debug(`[SessionKit] ${message}`, ...args);
+    console.log(`[SessionKit] ${message}`, ...args);
   }
 }
 

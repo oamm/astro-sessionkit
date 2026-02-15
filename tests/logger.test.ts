@@ -3,7 +3,7 @@ import { debug, warn, error, info } from "../src/core/logger";
 import { setConfig } from "../src/core/config";
 
 describe("logger", () => {
-  const consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+  vi.spyOn(console, 'debug').mockImplementation(() => {});
   const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
   const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -21,13 +21,13 @@ describe("logger", () => {
     it("does not log when debug is false", () => {
       setConfig({ debug: false });
       debug("test message");
-      expect(consoleDebugSpy).not.toHaveBeenCalled();
+      expect(consoleLogSpy).not.toHaveBeenCalled();
     });
 
     it("logs when debug is true", () => {
       setConfig({ debug: true });
       debug("test message", { foo: "bar" });
-      expect(consoleDebugSpy).toHaveBeenCalledWith("[SessionKit] test message", { foo: "bar" });
+      expect(consoleLogSpy).toHaveBeenCalledWith("[SessionKit] test message", { foo: "bar" });
     });
   });
 

@@ -3,7 +3,7 @@
 // ============================================================================
 
 import type {AstroIntegration } from "astro";
-import { setConfig } from "./core/config";
+import {getConfig, setConfig} from "./core/config";
 import type { SessionKitConfig } from "./core/types";
 
 /**
@@ -31,6 +31,7 @@ import type { SessionKitConfig } from "./core/types";
 export default function sessionkit(config: SessionKitConfig = {}): AstroIntegration {
     // Store configuration
     setConfig(config);
+    const resolvedConfig = getConfig();
 
     return {
         name: "astro-sessionkit",
@@ -43,7 +44,7 @@ export default function sessionkit(config: SessionKitConfig = {}): AstroIntegrat
                 });
 
                 // 2. Add route guard if there are protection rules or global protection is enabled
-                if ((config.protect && config.protect.length > 0) || config.globalProtect) {
+                if ((resolvedConfig.protect && resolvedConfig.protect.length > 0) || resolvedConfig.globalProtect) {
                     addMiddleware({
                         entrypoint: "astro-sessionkit/guard",
                         order: "pre",
