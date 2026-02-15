@@ -126,4 +126,22 @@ export interface SessionKitConfig {
    * Use this to provide your own way to initialize the session context
    */
   setContextStore?: (context: SessionContext) => void;
+
+  /**
+   * Enable global session verification for all routes.
+   * If true, any route not explicitly ignored will require an active session.
+   * @default false
+   */
+  globalProtect?: boolean;
+
+  /**
+   * Routes to exclude from global protection (only if globalProtect is true)
+   */
+  exclude?: string[];
+
+  /**
+   * Enable debug logging
+   * @default false
+   */
+  debug?: boolean;
 }

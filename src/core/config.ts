@@ -17,6 +17,9 @@ export interface ResolvedConfig {
     runWithContext?: <T>(context: SessionContext, fn: () => T) => T | Promise<T>;
     getContextStore?: () => SessionContext | undefined;
     setContextStore?: (context: SessionContext) => void;
+    globalProtect: boolean;
+    exclude: string[];
+    debug: boolean;
 }
 
 const DEFAULT_CONFIG: ResolvedConfig = {
@@ -27,6 +30,9 @@ const DEFAULT_CONFIG: ResolvedConfig = {
         getPermissions: (session: Session | null) => session?.permissions ?? [],
         check: undefined,
     },
+    globalProtect: false,
+    exclude: [],
+    debug: false,
 };
 
 let config: ResolvedConfig = { ...DEFAULT_CONFIG };
@@ -90,6 +96,23 @@ export function setConfig(userConfig: SessionKitConfig): void {
     newConfig.runWithContext = userConfig.runWithContext;
     newConfig.getContextStore = userConfig.getContextStore;
     newConfig.setContextStore = userConfig.setContextStore;
+    newConfig.globalProtect = userConfig.globalProtect ?? DEFAULT_CONFIG.globalProtect;
+    
+    if (userConfig.exclude) {
+        for (const pattern of userConfig.exclude) {
+            if (!isValidPattern(pattern)) {
+                throw new Error(
+                    `[SessionKit] Invalid exclude pattern: "${pattern}". ` +
+                    `Patterns must start with / and be less than 1000 characters.`
+                );
+            }
+        }
+        newConfig.exclude = [...userConfig.exclude];
+    } else {
+        newConfig.exclude = [...DEFAULT_CONFIG.exclude];
+    }
+
+    newConfig.debug = userConfig.debug ?? DEFAULT_CONFIG.debug;
 
     // Atomic update
     config = Object.freeze(newConfig);

@@ -42,8 +42,8 @@ export default function sessionKit(config: SessionKitConfig = {}): AstroIntegrat
           order: "pre",
         });
 
-        // 2. Add route guard if there are protection rules
-        if (config.protect && config.protect.length > 0) {
+        // 2. Add route guard if there are protection rules or global protection is enabled
+        if ((config.protect && config.protect.length > 0) || config.globalProtect) {
           addMiddleware({
             entrypoint: "astro-sessionkit/guard",
             order: "pre",

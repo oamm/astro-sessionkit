@@ -76,10 +76,10 @@ async function checkRule(rule: ProtectionRule, session: Session | null): Promise
  */
 export function createGuardMiddleware(): MiddlewareHandler {
   return async (context : APIContext, next) => {
-    const { protect, loginPath } = getConfig();
+    const { protect, loginPath, globalProtect, exclude } = getConfig();
     
-    // No rules configured - skip
-    if (protect.length === 0) {
+    // No rules configured and no global protect - skip
+    if (protect.length === 0 && !globalProtect) {
       return next();
     }
 
@@ -96,8 +96,24 @@ export function createGuardMiddleware(): MiddlewareHandler {
     // Find matching rule
     const rule = protect.find((r) => matchesPattern(r.pattern, pathname));
     
-    // No matching rule - allow
+    // No matching rule - check global protection
     if (!rule) {
+      if (globalProtect) {
+        // Skip if path is in exclude list
+        if (exclude.some((pattern) => matchesPattern(pattern, pathname))) {
+          return next();
+        }
+        
+        // Skip if it's the login page itself (to avoid redirect loops)
+        if (pathname === loginPath) {
+          return next();
+        }
+
+        // Require session
+        if (!session) {
+          return context.redirect(loginPath);
+        }
+      }
       return next();
     }
 
