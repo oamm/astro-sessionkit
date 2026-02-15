@@ -74,74 +74,89 @@ async function checkRule(rule: ProtectionRule, session: Session | null): Promise
  */
 export function createGuardMiddleware(): MiddlewareHandler {
   return async (context, next) => {
-    const { protect, loginPath, globalProtect, exclude } = getConfig();
-    
     let pathname: string;
     try {
-      pathname = new URL(context.request.url).pathname;
+        pathname = new URL(context.request.url).pathname;
     } catch {
-      // Fallback if URL is invalid (unlikely in Astro)
-      pathname = "/";
+        pathname = "/";
     }
 
-    logger.debug(`[Guard] Pathname: ${pathname}, GlobalProtect: ${globalProtect}, Rules: ${protect.length}`);
+    const {protect, loginPath, globalProtect, exclude, debug} = getConfig();
+
+    if (debug) {
+        logger.debug(`[Guard] Pathname: ${pathname}, GlobalProtect: ${globalProtect}, Rules: ${protect.length}`);
+    }
 
     // No rules configured and no global protect - skip
     if (protect.length === 0 && !globalProtect) {
-      logger.debug(`[Guard] Skipping ${pathname} because no rules are configured and globalProtect is false`);
-      return next();
+        if (debug) {
+            logger.debug(`[Guard] Skipping ${pathname} because no rules are configured and globalProtect is false`);
+        }
+        return next();
     }
 
     const sessionContext = getContextStore();
     const session = sessionContext?.session ?? null;
 
-    if (getConfig().debug) {
-      logger.debug(`[Guard] Session retrieved from store: ${session ? 'exists' : 'null'}`);
+    if (debug) {
+        logger.debug(`[Guard] Session retrieved from store: ${session ? 'exists' : 'null'}`);
     }
 
     // Find matching rule
     const rule = protect.find((r) => matchesPattern(r.pattern, pathname));
-    
-    if (rule) {
-      logger.debug(`[Guard] Found matching rule for ${pathname}:`, rule);
+
+    if (rule && debug) {
+        logger.debug(`[Guard] Found matching rule for ${pathname}:`, rule);
     }
 
     // No matching rule - check global protection
     if (!rule) {
-      if (globalProtect) {
-        // Skip if path is in exclude list
-        if (exclude.some((pattern) => matchesPattern(pattern, pathname))) {
-          logger.debug(`[GlobalProtect] Skipping ${pathname} because it matches an exclude pattern`);
-          return next();
-        }
-        
-        // Skip if it's the login page itself (to avoid redirect loops)
-        if (pathname === loginPath) {
-          logger.debug(`[GlobalProtect] Skipping ${pathname} because it is the loginPath`);
-          return next();
+        if (globalProtect) {
+            // Skip if path is in exclude list
+            if (exclude.some((pattern) => matchesPattern(pattern, pathname))) {
+                if (debug) {
+                    logger.debug(`[GlobalProtect] Skipping ${pathname} because it matches an exclude pattern`);
+                }
+                return next();
+            }
+
+            // Skip if it's the login page itself (to avoid redirect loops)
+            if (pathname === loginPath) {
+                if (debug) {
+                    logger.debug(`[GlobalProtect] Skipping ${pathname} because it is the loginPath`);
+                }
+                return next();
+            }
+
+            // Require valid session
+            if (!session || !isValidSessionStructure(session)) {
+                if (debug) {
+                    logger.debug(`[GlobalProtect] Redirecting to ${loginPath} because session is ${session ? 'invalid' : 'missing'}`);
+                }
+                return context.redirect(loginPath);
+            }
         }
 
-        // Require valid session
-        if (!session || !isValidSessionStructure(session)) {
-          logger.debug(`[GlobalProtect] Redirecting to ${loginPath} because session is ${session ? 'invalid' : 'missing'}`);
-          return context.redirect(loginPath);
+        if (debug) {
+            logger.debug(`[GlobalProtect] Allowing ${pathname} because session is valid or globalProtect is false`);
         }
-      }
-      
-      logger.debug(`[GlobalProtect] Allowing ${pathname} because session is valid or globalProtect is false`);
-      return next();
+        return next();
     }
 
     // Check if access is allowed
     const allowed = await checkRule(rule, session);
 
     if (!allowed) {
-      const redirectTo = rule.redirectTo ?? loginPath;
-      logger.debug(`[Guard] Redirecting to ${redirectTo} because access was denied by rule:`, rule);
-      return context.redirect(redirectTo);
+        const redirectTo = rule.redirectTo ?? loginPath;
+        if (debug) {
+            logger.debug(`[Guard] Redirecting to ${redirectTo} because access was denied by rule:`, rule);
+        }
+        return context.redirect(redirectTo);
     }
 
-    logger.debug(`[Guard] Allowing ${pathname} because access was granted by rule:`, rule);
+    if (debug) {
+        logger.debug(`[Guard] Allowing ${pathname} because access was granted by rule:`, rule);
+    }
     return next();
   };
 }

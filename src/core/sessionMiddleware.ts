@@ -47,17 +47,17 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
     }
 
     // Run the rest of the request chain with session context
-    const config = getConfig();
+    const {runWithContext, getContextStore, setContextStore, context: externalContext, debug} = getConfig();
 
     const globalStorage = globalThis as any;
     if (!globalStorage[LOGGED_KEY]) {
         let contextStrategy = 'default';
 
-        if (config.runWithContext) {
+        if (runWithContext) {
             contextStrategy = 'custom (runWithContext)';
-        } else if (config.getContextStore) {
+        } else if (getContextStore) {
             contextStrategy = 'custom (getter/setter)';
-        } else if (config.context) {
+        } else if (externalContext) {
             contextStrategy = 'custom (external AsyncLocalStorage)';
         }
 
@@ -71,29 +71,29 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
     // If getContextStore is provided, but runWithContext is NOT,
     // we assume the user is managing the context at a superior level
     // and we should NOT wrap the call in our default runner.
-    if (config.getContextStore && !config.runWithContext) {
+    if (getContextStore && !runWithContext) {
         // Initialize context store if setter is provided
-        const store = config.getContextStore();
-        if (config.debug) {
+        const store = getContextStore();
+        if (debug) {
             logger.debug('[SessionMiddleware] Custom getContextStore returned:', !!store);
         }
         if (store) {
             store.session = session;
-        } else if (config.setContextStore) {
-            if (config.debug) {
+        } else if (setContextStore) {
+            if (debug) {
                 logger.debug('[SessionMiddleware] Calling custom setContextStore');
             }
-            config.setContextStore(sessionContext);
+            setContextStore(sessionContext);
         } else {
             logger.error('getContextStore returned undefined, cannot set session');
         }
         return runLogic();
     }
 
-    if (config.debug) {
-        logger.debug('[SessionMiddleware] Using' + (config.runWithContext ? ' custom ' : ' default ') + 'runner');
+    if (debug) {
+        logger.debug('[SessionMiddleware] Using' + (runWithContext ? ' custom ' : ' default ') + 'runner');
     }
 
-    const runner = config.runWithContext ?? defaultRunWithContext;
+    const runner = runWithContext ?? defaultRunWithContext;
     return runner(sessionContext, runLogic);
 };
