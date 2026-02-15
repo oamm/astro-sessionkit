@@ -90,15 +90,40 @@ export function setConfig(userConfig: SessionKitConfig): void {
             getPermissions: userConfig.access.getPermissions ?? DEFAULT_CONFIG.access.getPermissions,
             check: userConfig.access.check,
         };
+
+        // Migration/Safety: If user misplaced globalProtect/exclude/debug in access object,
+        // we honor them but warn about it.
+        const anyAccess = userConfig.access as any;
+        if (anyAccess.globalProtect !== undefined && userConfig.globalProtect === undefined) {
+            newConfig.globalProtect = anyAccess.globalProtect;
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn('[SessionKit] Deprecation: globalProtect should be at the top level of configuration, not inside "access".');
+            }
+        }
+        if (anyAccess.exclude !== undefined && userConfig.exclude === undefined) {
+            newConfig.exclude = anyAccess.exclude;
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn('[SessionKit] Deprecation: exclude should be at the top level of configuration, not inside "access".');
+            }
+        }
+        if (anyAccess.debug !== undefined && userConfig.debug === undefined) {
+            newConfig.debug = anyAccess.debug;
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn('[SessionKit] Deprecation: debug should be at the top level of configuration, not inside "access".');
+            }
+        }
     }
 
     // Set context hooks
     newConfig.runWithContext = userConfig.runWithContext;
     newConfig.getContextStore = userConfig.getContextStore;
     newConfig.setContextStore = userConfig.setContextStore;
-    newConfig.globalProtect = userConfig.globalProtect ?? DEFAULT_CONFIG.globalProtect;
     
-    if (userConfig.exclude) {
+    if (userConfig.globalProtect !== undefined) {
+        newConfig.globalProtect = userConfig.globalProtect;
+    }
+
+    if (userConfig.exclude !== undefined) {
         for (const pattern of userConfig.exclude) {
             if (!isValidPattern(pattern)) {
                 throw new Error(
@@ -108,11 +133,13 @@ export function setConfig(userConfig: SessionKitConfig): void {
             }
         }
         newConfig.exclude = [...userConfig.exclude];
-    } else {
+    } else if (newConfig.exclude.length === 0) {
         newConfig.exclude = [...DEFAULT_CONFIG.exclude];
     }
 
-    newConfig.debug = userConfig.debug ?? DEFAULT_CONFIG.debug;
+    if (userConfig.debug !== undefined) {
+        newConfig.debug = userConfig.debug;
+    }
 
     // Atomic update
     config = Object.freeze(newConfig);

@@ -7,6 +7,7 @@ import { getContextStore } from "./context";
 import { getConfig } from "./config";
 import { matchesPattern } from "./matcher";
 import type { ProtectionRule, Session } from "./types";
+import { isValidSessionStructure } from "./validation";
 
 /**
  * Check if session satisfies a protection rule
@@ -38,8 +39,8 @@ async function checkRule(rule: ProtectionRule, session: Session | null): Promise
     }
   }
 
-  // Must be authenticated for all other checks
-  if (!session) {
+  // Must be authenticated and have a valid session structure for all other checks
+  if (!session || !isValidSessionStructure(session)) {
     return false;
   }
 
@@ -109,8 +110,8 @@ export function createGuardMiddleware(): MiddlewareHandler {
           return next();
         }
 
-        // Require session
-        if (!session) {
+        // Require valid session
+        if (!session || !isValidSessionStructure(session)) {
           return context.redirect(loginPath);
         }
       }

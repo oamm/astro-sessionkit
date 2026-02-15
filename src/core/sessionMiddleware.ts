@@ -7,6 +7,7 @@ import {runWithContext as defaultRunWithContext} from "./context";
 import {isValidSessionStructure} from "./validation";
 import type {Session} from "./types";
 import {getConfig} from "./config";
+import {warn} from "./logger";
 
 /**
  * Session key used to store session in context.session
@@ -31,12 +32,11 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
             session = rawSession;
         } else {
             // Invalid session structure - log warning and treat as unauthenticated
-            if (process.env.NODE_ENV !== 'production') {
-                console.warn(
-                    '[SessionKit] Invalid session structure detected. Session will be ignored. ' +
-                    'Ensure context.session.set("__session__", ...) has the correct structure.'
-                );
-            }
+            warn(
+                'Invalid session structure detected. Session will be ignored. ' +
+                'Ensure context.session.set("__session__", ...) has the correct structure. ' +
+                'Received: ' + JSON.stringify(rawSession)
+            );
             session = null;
         }
     }

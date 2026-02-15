@@ -6,6 +6,7 @@ Simple session access and route protection for Astro applications.
 
 - ✅ **Simple API** - Access session data anywhere in your app
 - 🛡️ **Route Protection** - Declarative route guards with roles/permissions
+- 🔒 **Global Protection** - Protect all routes by default with a single flag
 - 🚀 **Type Safe** - Full TypeScript support
 - 🎯 **Flexible** - Works with any session storage (cookies, Redis, DB, etc.)
 - ⚡ **Fast** - Uses AsyncLocalStorage for zero-overhead access
@@ -44,7 +45,10 @@ export default defineConfig({
                     pattern: '/premium/**',
                     allow: (session) => session?.subscription === 'premium'
                 }
-            ]
+            ],
+            globalProtect: false, // Set to true to protect all routes by default
+            exclude: ['/public/**', '/about'], // Routes to ignore if globalProtect is true
+            debug: false // Enable debug logging
         })
     ]
 });
@@ -381,6 +385,41 @@ Patterns support glob syntax:
 - `/admin` - Exact match
 - `/admin/*` - One or more segments (`/admin/users`, `/admin/users/123`)
 - `/admin/**` - Any path under admin (`/admin`, `/admin/users`, `/admin/x/y/z`)
+
+### Global Protection
+
+You can protect all routes in your application by default using the `globalProtect` option. When enabled, any route that doesn't match an explicit rule in `protect` or isn't listed in `exclude` will require an active session.
+
+```ts
+sessionkit({
+  loginPath: '/login',
+  globalProtect: true,
+  exclude: [
+    '/',          // Public landing page
+    '/login',     // Login page (automatically excluded but good to be explicit)
+    '/about',     // Public about page
+    '/public/**', // All public assets/pages
+    '/api/health' // Health check endpoint
+  ]
+})
+```
+
+- **If `globalProtect` is `true`**: All routes require authentication unless explicitly excluded.
+- **If `globalProtect` is `false` (default)**: Only routes matching patterns in the `protect` array are guarded.
+- **Exclusion rules**: The `exclude` array accepts the same glob patterns as the `protect` rules.
+- **Auto-exclusion**: The `loginPath` is automatically excluded from global protection to prevent redirect loops.
+
+### Debug Mode
+
+Enable debug logging to troubleshoot configuration issues or pattern matching:
+
+```ts
+sessionkit({
+  debug: true
+})
+```
+
+When enabled, SessionKit will log detailed information about matching rules and access decisions to the console.
 
 ## Session Type
 
