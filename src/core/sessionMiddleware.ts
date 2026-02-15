@@ -26,6 +26,9 @@ const LOGGED_KEY = Symbol.for('astro-sessionkit.middleware.logged');
  * throughout the request via AsyncLocalStorage
  */
 export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
+    const config = getConfig();
+    const {runWithContext, getContextStore, setContextStore, context: externalContext, debug} = config;
+
     // Get session from context.session store
     const rawSession = await context.session?.get<Session>(SESSION_KEY) ?? null;
 
@@ -47,8 +50,6 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
     }
 
     // Run the rest of the request chain with session context
-    const {runWithContext, getContextStore, setContextStore, context: externalContext, debug} = getConfig();
-
     const globalStorage = globalThis as any;
     if (!globalStorage[LOGGED_KEY]) {
         let contextStrategy = 'default';

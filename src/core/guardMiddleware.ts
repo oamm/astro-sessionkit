@@ -81,7 +81,8 @@ export function createGuardMiddleware(): MiddlewareHandler {
         pathname = "/";
     }
 
-    const {protect, loginPath, globalProtect, exclude, debug} = getConfig();
+    const config = getConfig();
+    const {protect, loginPath, globalProtect, exclude, debug} = config;
 
     if (debug) {
         logger.debug(`[Guard] Pathname: ${pathname}, GlobalProtect: ${globalProtect}, Rules: ${protect.length}`);

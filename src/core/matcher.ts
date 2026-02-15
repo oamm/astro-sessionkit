@@ -6,7 +6,12 @@ function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+const regexCache = new Map<string, RegExp>();
+
 function globToRegex(pattern: string): RegExp {
+  const cached = regexCache.get(pattern);
+  if (cached) return cached;
+
   let regex = "";
   let i = 0;
 
@@ -53,7 +58,9 @@ function globToRegex(pattern: string): RegExp {
     i += 1;
   }
 
-  return new RegExp(`^${regex}$`);
+  const result = new RegExp(`^${regex}$`);
+  regexCache.set(pattern, result);
+  return result;
 }
 
 export function matchesPattern(pattern: string, path: string): boolean {

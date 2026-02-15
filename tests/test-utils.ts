@@ -18,6 +18,7 @@ export type MockSessionStore = {
     set: (key: string, value: unknown) => void;
     delete: (key: string) => void;
     has: (key: string) => boolean;
+    regenerate: () => void;
     _store: Map<string, unknown>;
 };
 
@@ -41,6 +42,7 @@ export function mockSessionStore(seed: Record<string, unknown> = {}): MockSessio
         store.delete(key);
     });
     const has: StoreHas = vi.fn((key: string) => store.has(key));
+    const regenerate = vi.fn();
 
     return {
         _store: store,
@@ -48,6 +50,7 @@ export function mockSessionStore(seed: Record<string, unknown> = {}): MockSessio
         set,
         delete: del,
         has,
+        regenerate,
     };
 }
 

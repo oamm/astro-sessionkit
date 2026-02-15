@@ -158,7 +158,8 @@ export function hasRolePermission(role: string, permission: string): boolean {
  * ```
  */
 export function setSession(session: Session, context?: SessionKitContext): void {
-    const ctx = context || getContextStore()?.astroContext;
+    const store = getContextStore();
+    const ctx = context || store?.astroContext;
 
     if (!ctx) {
         throw new Error(
@@ -174,7 +175,12 @@ export function setSession(session: Session, context?: SessionKitContext): void 
         );
     }
 
-    // Set in context.locals for SessionKit middleware to read
+    // Update ALS store if available for same-request consistency
+    if (store) {
+        store.session = session;
+    }
+
+    // Set in context.session for Astro to persist
     ctx.session?.set('__session__', session);
 }
 
@@ -202,7 +208,8 @@ export function setSession(session: Session, context?: SessionKitContext): void 
  * ```
  */
 export function clearSession(context?: SessionKitContext): void {
-    const ctx = context || getContextStore()?.astroContext;
+    const store = getContextStore();
+    const ctx = context || store?.astroContext;
 
     if (!ctx) {
         throw new Error(
@@ -211,7 +218,50 @@ export function clearSession(context?: SessionKitContext): void {
         );
     }
 
+    // Update ALS store if available for same-request consistency
+    if (store) {
+        store.session = null;
+    }
+
     ctx.session?.delete('__session__');
+}
+
+/**
+ * Regenerate the session ID to prevent session fixation attacks
+ *
+ * Use this after a successful login or privilege change.
+ * This is only supported if the underlying Astro session driver supports it.
+ *
+ * @param context - Astro API context (optional if called within request context)
+ *
+ * @example
+ * ```ts
+ * // In login endpoint
+ * export const POST: APIRoute = async (context) => {
+ *   const user = await authenticate(request);
+ *   if (user) {
+ *     // 1. Regenerate session ID
+ *     regenerateSession();
+ *
+ *     // 2. Set new session data
+ *     setSession({ userId: user.id, role: user.role });
+ *   }
+ * }
+ * ```
+ */
+export function regenerateSession(context?: SessionKitContext): void {
+    const ctx = context || getContextStore()?.astroContext;
+
+    if (!ctx) {
+        throw new Error(
+            '[SessionKit] Cannot regenerate session: Astro context is missing. ' +
+            'Provide it as an argument or ensure sessionMiddleware is running.'
+        );
+    }
+
+    if (ctx.session?.regenerate) {
+        ctx.session.regenerate();
+    }
 }
 
 /**
@@ -242,7 +292,8 @@ export function clearSession(context?: SessionKitContext): void {
  * ```
  */
 export function updateSession(updates: Partial<Session>, context?: SessionKitContext): void {
-    const ctx = context || getContextStore()?.astroContext;
+    const store = getContextStore();
+    const ctx = context || store?.astroContext;
 
     if (!ctx) {
         throw new Error(
@@ -251,21 +302,28 @@ export function updateSession(updates: Partial<Session>, context?: SessionKitCon
         );
     }
 
-    const currentSession = ctx.session?.get<Session>('__session__');
+    // Get current session from ALS (preferred) or Astro session
+    const currentSession = store?.session || ctx.session?.get<Session>('__session__');
 
-    if (!currentSession) {
-        throw new Error('[SessionKit] Cannot update session: no session exists');
+    // Note: ctx.session.get might return a Promise in some Astro versions/drivers.
+    // However, since sessionMiddleware already awaits it, store.session should be populated.
+    // If store.session is missing but we are in a middleware-managed request, it means no session exists.
+    
+    if (!currentSession || (currentSession instanceof Promise)) {
+        // If it's a promise, we might have a sync/async mismatch, but usually getSession() handles this.
+        // For robustness, we check if we actually have a session object.
+        const session = currentSession instanceof Promise ? null : currentSession;
+        if (!session) {
+            throw new Error('[SessionKit] Cannot update session: no session exists');
+        }
     }
+
+    // We can safely cast here if it's not a promise
+    const session = currentSession as Session;
 
     // Merge updates with current session
-    const updatedSession = {...currentSession, ...updates};
+    const updatedSession = {...session, ...updates};
 
-    // Validate merged session
-    if (!isValidSessionStructure(updatedSession)) {
-        throw new Error(
-            '[SessionKit] Invalid session structure after update. Ensure all fields are valid.'
-        );
-    }
-
-    ctx.session?.set('__session__', updatedSession);
+    // Use setSession to handle validation and both store updates
+    setSession(updatedSession, ctx);
 }

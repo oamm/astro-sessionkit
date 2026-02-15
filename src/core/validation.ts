@@ -21,18 +21,27 @@ export function isValidSessionStructure(input: unknown): input is Session {
         return false;
     }
 
+    // Security: Check for unexpected null bytes or control characters in userId
+    if (/[\x00-\x1F\x7F]/.test(session.userId)) {
+        return false;
+    }
+
     // DoS protection: Limit userId length
     if (session.userId.length > 255) {
         return false;
     }
 
     // Optional fields validation (if present)
-    if (session.email !== undefined) {
+    if (session.email !== undefined && session.email !== null) {
         if (typeof session.email !== 'string') {
             return false;
         }
         // Reasonable email length limit
         if (session.email.length > 320) {
+            return false;
+        }
+        // Basic email format sanity check (not full validation, just security)
+        if (session.email.length > 0 && !session.email.includes('@')) {
             return false;
         }
     }
@@ -43,6 +52,10 @@ export function isValidSessionStructure(input: unknown): input is Session {
         }
         // Reasonable role length limit
         if (session.role.length > 100) {
+            return false;
+        }
+        // Security: No control characters in role
+        if (/[\x00-\x1F\x7F]/.test(session.role)) {
             return false;
         }
     }
