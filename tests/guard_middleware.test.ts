@@ -293,6 +293,27 @@ describe("guardMiddleware", () => {
             expect(next).not.toHaveBeenCalled();
         });
 
+        it("redirects authenticated users even if loginPath is in exclude list", async () => {
+            setConfig({
+                loginPath: "/login",
+                globalProtect: true,
+                exclude: ["/", "/login"] // loginPath is excluded
+            });
+
+            const session = mockSession();
+            const guard = createGuardMiddleware();
+            const ctx = mockContext({url: "http://localhost/login"});
+            const next = mockNext();
+
+            await runWithContext({session}, async () => {
+                const response = await guard(ctx as any, next as any) as Response;
+                expect(response.status).toBe(302);
+                expect(response.headers.get("Location")).toBe("/");
+            });
+
+            expect(next).not.toHaveBeenCalled();
+        });
+
         it("allows unauthenticated users to stay on login page", async () => {
             setConfig({
                 loginPath: "/login",

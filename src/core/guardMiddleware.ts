@@ -113,14 +113,6 @@ export function createGuardMiddleware(): MiddlewareHandler {
     // No matching rule - check global protection
     if (!rule) {
         if (globalProtect) {
-            // Skip if path is in exclude list
-            if (exclude.some((pattern) => matchesPattern(pattern, pathname))) {
-                if (debug) {
-                    logger.debug(`[GlobalProtect] Skipping ${pathname} because it matches an exclude pattern`);
-                }
-                return next();
-            }
-
             // Skip if it's the login page itself (to avoid redirect loops)
             if (pathname === loginPath) {
                 // NEW: If session is already present, redirect to home (/)
@@ -133,6 +125,14 @@ export function createGuardMiddleware(): MiddlewareHandler {
 
                 if (debug) {
                     logger.debug(`[GlobalProtect] Skipping ${pathname} because it is the loginPath`);
+                }
+                return next();
+            }
+
+            // Skip if path is in exclude list
+            if (exclude.some((pattern) => matchesPattern(pattern, pathname))) {
+                if (debug) {
+                    logger.debug(`[GlobalProtect] Skipping ${pathname} because it matches an exclude pattern`);
                 }
                 return next();
             }
