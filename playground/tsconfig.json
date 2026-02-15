@@ -1,0 +1,10 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "astro-sessionkit": ["../src/index.ts"],
+      "astro-sessionkit/*": ["../src/*"]
+    }
+  }
+}

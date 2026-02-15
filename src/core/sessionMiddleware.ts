@@ -5,7 +5,7 @@
 import type {MiddlewareHandler} from "astro";
 import {runWithContext as defaultRunWithContext} from "./context";
 import {isValidSessionStructure} from "./validation";
-import type {Session} from "./types";
+import type {Session, SessionContext, SessionKitContext} from "./types";
 import {getConfig} from "./config";
 import * as logger from "./logger";
 
@@ -15,6 +15,11 @@ import * as logger from "./logger";
 const SESSION_KEY = "__session__";
 
 /**
+ * Redundant logging prevention key
+ */
+const LOGGED_KEY = Symbol.for('astro-sessionkit.middleware.logged');
+
+/**
  * Main session middleware
  *
  * Reads session from context.session.get('__session__') and makes it available
@@ -22,7 +27,7 @@ const SESSION_KEY = "__session__";
  */
 export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
     // Get session from context.session store
-    const rawSession = context.session?.get<Session>(SESSION_KEY) ?? null;
+    const rawSession = await context.session?.get<Session>(SESSION_KEY) ?? null;
 
     // Validate session structure if present
     let session: Session | null = null;
@@ -44,13 +49,24 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
     // Run the rest of the request chain with session context
     const config = getConfig();
 
-    if (config.debug) {
-        logger.debug('[SessionMiddleware] Initializing context. Custom hooks present:', {
-            getContextStore: !!config.getContextStore,
-            setContextStore: !!config.setContextStore,
-            runWithContext: !!config.runWithContext
-        });
+    const globalStorage = globalThis as any;
+    if (!globalStorage[LOGGED_KEY]) {
+        let contextStrategy = 'default';
+
+        if (config.runWithContext) {
+            contextStrategy = 'custom (runWithContext)';
+        } else if (config.getContextStore) {
+            contextStrategy = 'custom (getter/setter)';
+        } else if (config.context) {
+            contextStrategy = 'custom (external AsyncLocalStorage)';
+        }
+
+        logger.debug(`[SessionKit] Middleware initialized (context: ${contextStrategy})`);
+        globalStorage[LOGGED_KEY] = true;
     }
+
+    const runLogic = () => next();
+    const sessionContext: SessionContext = { session, astroContext: context as SessionKitContext };
 
     // If getContextStore is provided, but runWithContext is NOT,
     // we assume the user is managing the context at a superior level
@@ -67,16 +83,17 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
             if (config.debug) {
                 logger.debug('[SessionMiddleware] Calling custom setContextStore');
             }
-            config.setContextStore({session});
+            config.setContextStore(sessionContext);
         } else {
             logger.error('getContextStore returned undefined, cannot set session');
         }
-        return next();
+        return runLogic();
     }
 
     if (config.debug) {
         logger.debug('[SessionMiddleware] Using' + (config.runWithContext ? ' custom ' : ' default ') + 'runner');
     }
+
     const runner = config.runWithContext ?? defaultRunWithContext;
-    return runner({session}, () => next());
+    return runner(sessionContext, runLogic);
 };

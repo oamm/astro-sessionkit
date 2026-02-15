@@ -1,0 +1,25 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getSession } from 'astro-sessionkit/server';
+
+const session = getSession();
+---
+
+<Layout>
+    <div class="bg-red-50 p-8 rounded-lg shadow-md border-t-8 border-red-500">
+        <h1 class="text-2xl font-bold mb-4 text-red-700">Admin Area</h1>
+        <p class="mb-6">This page is protected by a specific rule: <code>{ "{ pattern: '/admin/**', role: 'admin' }" }</code>.</p>
+        
+        <div class="bg-white p-4 rounded border">
+            <h2 class="font-semibold text-gray-700">Admin-only content:</h2>
+            <p class="mt-2 text-green-600 font-bold italic">
+                You can only see this because you have the "admin" role.
+            </p>
+        </div>
+
+        <div class="mt-8">
+            <h2 class="font-semibold">Current Session Data:</h2>
+            <pre class="mt-2 text-sm bg-gray-50 p-2 rounded">{JSON.stringify(session, null, 2)}</pre>
+        </div>
+    </div>
+</Layout>

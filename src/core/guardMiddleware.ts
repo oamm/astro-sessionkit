@@ -2,7 +2,7 @@
 // Route Guard Middleware - Enforces protection rules
 // ============================================================================
 
-import type {APIContext, MiddlewareHandler} from "astro";
+import type {MiddlewareHandler} from "astro";
 import { getContextStore } from "./context";
 import { getConfig } from "./config";
 import { matchesPattern } from "./matcher";
@@ -73,7 +73,7 @@ async function checkRule(rule: ProtectionRule, session: Session | null): Promise
  * Create route guard middleware
  */
 export function createGuardMiddleware(): MiddlewareHandler {
-  return async (context : APIContext, next) => {
+  return async (context, next) => {
     const { protect, loginPath, globalProtect, exclude } = getConfig();
     
     let pathname: string;

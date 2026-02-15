@@ -1,0 +1,21 @@
+{
+  "name": "playground",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/check": "latest",
+    "@tailwindcss/vite": "^4.1.18",
+    "astro": "latest",
+    "tailwindcss": "^4.1.18",
+    "typescript": "latest",
+    "unstorage": "latest"
+  }
+}

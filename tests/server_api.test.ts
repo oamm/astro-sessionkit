@@ -345,9 +345,22 @@ describe("session management", () => {
       const context = mockContext();
       const session = mockSession({ userId: "123", role: "admin" });
 
-      setSession(context as any, session);
+      setSession(session, context as any);
 
       // Verify session was stored
+      expect(context.session.set).toHaveBeenCalledWith(SESSION_KEY, session);
+      expect(context.session._store.get(SESSION_KEY)).toEqual(session);
+    });
+
+    it("sets valid session using AsyncLocalStorage context", async () => {
+      const context = mockContext();
+      const session = mockSession({ userId: "123", role: "admin" });
+
+      await runWithContext({ session: null, astroContext: context as any }, () => {
+        setSession(session);
+      });
+
+      // Verify session was stored in the context provided via ALS
       expect(context.session.set).toHaveBeenCalledWith(SESSION_KEY, session);
       expect(context.session._store.get(SESSION_KEY)).toEqual(session);
     });
@@ -356,7 +369,7 @@ describe("session management", () => {
       const context = mockContext();
       const invalidSession = { email: "test@example.com" }; // Missing userId
 
-      expect(() => setSession(context as any, invalidSession as any)).toThrow(
+      expect(() => setSession(invalidSession as any, context as any)).toThrow(
           /Invalid session structure/
       );
     });
@@ -365,7 +378,7 @@ describe("session management", () => {
       const context = mockContext();
       const invalidSession = { userId: "" };
 
-      expect(() => setSession(context as any, invalidSession as any)).toThrow(
+      expect(() => setSession(invalidSession as any, context as any)).toThrow(
           /Invalid session structure/
       );
     });
@@ -374,7 +387,7 @@ describe("session management", () => {
       const context = mockContext();
       const session = { userId: "123" };
 
-      expect(() => setSession(context as any, session)).not.toThrow();
+      expect(() => setSession(session, context as any)).not.toThrow();
       expect(context.session._store.get(SESSION_KEY)).toEqual(session);
     });
 
@@ -389,7 +402,7 @@ describe("session management", () => {
         customField: "value",
       });
 
-      expect(() => setSession(context as any, session)).not.toThrow();
+      expect(() => setSession(session, context as any)).not.toThrow();
       expect(context.session._store.get(SESSION_KEY)).toEqual(session);
     });
 
@@ -399,7 +412,7 @@ describe("session management", () => {
       const session = mockSession();
 
       // Should not throw, just do nothing
-      expect(() => setSession(context as any, session)).not.toThrow();
+      expect(() => setSession(session, context as any)).not.toThrow();
     });
   });
 
@@ -411,6 +424,19 @@ describe("session management", () => {
       clearSession(context as any);
 
       // Verify delete was called
+      expect(context.session.delete).toHaveBeenCalledWith(SESSION_KEY);
+      expect(context.session._store.has(SESSION_KEY)).toBe(false);
+    });
+
+    it("clears session using AsyncLocalStorage context", async () => {
+      const session = mockSession();
+      const context = mockContext({ session });
+
+      await runWithContext({ session, astroContext: context as any }, () => {
+        clearSession();
+      });
+
+      // Verify delete was called on the context provided via ALS
       expect(context.session.delete).toHaveBeenCalledWith(SESSION_KEY);
       expect(context.session._store.has(SESSION_KEY)).toBe(false);
     });
@@ -435,7 +461,7 @@ describe("session management", () => {
       const session = mockSession({ userId: "123", role: "user" });
       const context = mockContext({ session });
 
-      updateSession(context as any, { role: "admin" });
+      updateSession({ role: "admin" }, context as any);
 
       // Verify the updated session was set
       const updatedSession = context.session._store.get(SESSION_KEY);
@@ -456,10 +482,10 @@ describe("session management", () => {
       });
       const context = mockContext({ session });
 
-      updateSession(context as any, {
+      updateSession({
         role: "admin",
         permissions: ["read", "write", "delete"],
-      });
+      }, context as any);
 
       const updatedSession = context.session._store.get(SESSION_KEY);
       expect(updatedSession).toMatchObject({
@@ -472,7 +498,7 @@ describe("session management", () => {
     it("throws error when no session exists", () => {
       const context = mockContext({ session: null });
 
-      expect(() => updateSession(context as any, { role: "admin" })).toThrow(
+      expect(() => updateSession({ role: "admin" }, context as any)).toThrow(
           /Cannot update session: no session exists/
       );
     });
@@ -483,7 +509,7 @@ describe("session management", () => {
 
       // Try to set userId to empty string
       expect(() =>
-          updateSession(context as any, { userId: "" } as any)
+          updateSession({ userId: "" } as any, context as any)
       ).toThrow(/Invalid session structure/);
     });
 
@@ -496,7 +522,7 @@ describe("session management", () => {
       });
       const context = mockContext({ session });
 
-      updateSession(context as any, { role: "admin" });
+      updateSession({ role: "admin" }, context as any);
 
       const updatedSession = context.session._store.get(SESSION_KEY);
       expect(updatedSession).toMatchObject({
@@ -511,10 +537,10 @@ describe("session management", () => {
       const session = mockSession({ userId: "123" });
       const context = mockContext({ session });
 
-      updateSession(context as any, {
+      updateSession({
         customField: "new value",
         nested: { data: "test" }
-      } as any);
+      } as any, context as any);
 
       const updatedSession = context.session._store.get(SESSION_KEY);
       expect(updatedSession).toMatchObject({
@@ -528,9 +554,27 @@ describe("session management", () => {
       const context = mockContext();
       delete (context as any).session;
 
-      expect(() => updateSession(context as any, { role: "admin" })).toThrow(
+      // When context.session is missing, getSession() in updateSession will return null,
+      // and updateSession will throw "no session exists"
+      expect(() => updateSession({ role: "admin" }, context as any)).toThrow(
           /Cannot update session: no session exists/
       );
+    });
+
+    it("updates session using AsyncLocalStorage context", async () => {
+      const session = mockSession({ userId: "123", role: "user" });
+      const context = mockContext({ session });
+
+      await runWithContext({ session, astroContext: context as any }, () => {
+        updateSession({ role: "admin" });
+      });
+
+      // Verify the updated session was set on the context provided via ALS
+      const updatedSession = context.session._store.get(SESSION_KEY);
+      expect(updatedSession).toEqual({
+        ...session,
+        role: "admin",
+      });
     });
   });
 });

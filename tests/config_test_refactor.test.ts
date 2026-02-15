@@ -3,12 +3,12 @@
 // ============================================================================
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { getConfig, setConfig } from "../src/core/config";
+import { getConfig, setConfig, resetConfig } from "../src/core/config";
 
 describe("config", () => {
   beforeEach(() => {
     // Reset to defaults before each test
-    setConfig({});
+    resetConfig();
   });
 
   describe("validation", () => {

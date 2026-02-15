@@ -4,8 +4,7 @@
 
 import {getContextStore} from "./core/context";
 import {isValidSessionStructure} from "./core/validation";
-import type {Session} from "./core/types";
-import type {APIContext} from "astro";
+import type {Session, SessionKitContext} from "./core/types";
 
 /**
  * Get the current session (returns null if not authenticated)
@@ -129,10 +128,10 @@ export function hasRolePermission(role: string, permission: string): boolean {
  * Use this after successful authentication to register the user's session.
  * This does NOT handle session storage (cookies, Redis, etc.) - you must do that separately.
  *
- * @param context - Astro API context
  * @param session - Session data to set
+ * @param context - Astro API context (optional if called within request context)
  *
- * @throws {Error} If session structure is invalid
+ * @throws {Error} If session structure is invalid or context missing
  *
  * @example
  * ```ts
@@ -143,7 +142,7 @@ export function hasRolePermission(role: string, permission: string): boolean {
  *
  *   if (user) {
  *     // Register session with SessionKit
- *     setSession(context, {
+ *     setSession({
  *       userId: user.id,
  *       email: user.email,
  *       role: user.role,
@@ -158,7 +157,16 @@ export function hasRolePermission(role: string, permission: string): boolean {
  * };
  * ```
  */
-export function setSession(context: APIContext, session: Session): void {
+export function setSession(session: Session, context?: SessionKitContext): void {
+    const ctx = context || getContextStore()?.astroContext;
+
+    if (!ctx) {
+        throw new Error(
+            '[SessionKit] Cannot set session: Astro context is missing. ' +
+            'Provide it as a second argument or ensure sessionMiddleware is running.'
+        );
+    }
+
     // Validate session structure
     if (!isValidSessionStructure(session)) {
         throw new Error(
@@ -167,7 +175,7 @@ export function setSession(context: APIContext, session: Session): void {
     }
 
     // Set in context.locals for SessionKit middleware to read
-    context.session?.set('__session__', session);
+    ctx.session?.set('__session__', session);
 }
 
 /**
@@ -176,14 +184,14 @@ export function setSession(context: APIContext, session: Session): void {
  * Use this during logout. This does NOT delete session storage (cookies, Redis, etc.) -
  * you must do that separately.
  *
- * @param context - Astro API context
+ * @param context - Astro API context (optional if called within request context)
  *
  * @example
  * ```ts
  * // In logout endpoint
  * export const POST: APIRoute = async (context) => {
  *   // Clear from SessionKit
- *   clearSession(context);
+ *   clearSession();
  *
  *   // YOU must also delete the session storage
  *   context.cookies.delete('session_id');
@@ -193,8 +201,17 @@ export function setSession(context: APIContext, session: Session): void {
  * };
  * ```
  */
-export function clearSession(context: APIContext): void {
-    context.session?.delete('__session__');
+export function clearSession(context?: SessionKitContext): void {
+    const ctx = context || getContextStore()?.astroContext;
+
+    if (!ctx) {
+        throw new Error(
+            '[SessionKit] Cannot clear session: Astro context is missing. ' +
+            'Provide it as an argument or ensure sessionMiddleware is running.'
+        );
+    }
+
+    ctx.session?.delete('__session__');
 }
 
 /**
@@ -203,8 +220,8 @@ export function clearSession(context: APIContext): void {
  * Useful for updating session data without replacing the entire session.
  * The updated session is validated before being set.
  *
- * @param context - Astro API context
  * @param updates - Partial session data to merge
+ * @param context - Astro API context (optional if called within request context)
  *
  * @throws {Error} If no session exists or updated session is invalid
  *
@@ -212,7 +229,7 @@ export function clearSession(context: APIContext): void {
  * ```ts
  * // Update user's role after promotion
  * export const POST: APIRoute = async (context) => {
- *   updateSession(context, {
+ *   updateSession({
  *     role: 'admin',
  *     permissions: ['admin:read', 'admin:write']
  *   });
@@ -224,8 +241,17 @@ export function clearSession(context: APIContext): void {
  * };
  * ```
  */
-export function updateSession(context: APIContext, updates: Partial<Session>): void {
-    const currentSession = context.session?.get<Session>('__session__');
+export function updateSession(updates: Partial<Session>, context?: SessionKitContext): void {
+    const ctx = context || getContextStore()?.astroContext;
+
+    if (!ctx) {
+        throw new Error(
+            '[SessionKit] Cannot update session: Astro context is missing. ' +
+            'Provide it as a second argument or ensure sessionMiddleware is running.'
+        );
+    }
+
+    const currentSession = ctx.session?.get<Session>('__session__');
 
     if (!currentSession) {
         throw new Error('[SessionKit] Cannot update session: no session exists');
@@ -241,5 +267,5 @@ export function updateSession(context: APIContext, updates: Partial<Session>): v
         );
     }
 
-    context.session?.set('__session__', updatedSession);
+    ctx.session?.set('__session__', updatedSession);
 }

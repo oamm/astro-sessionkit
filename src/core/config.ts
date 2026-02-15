@@ -18,10 +18,14 @@ export interface ResolvedConfig {
     runWithContext?: <T>(context: SessionContext, fn: () => T) => T | Promise<T>;
     getContextStore?: () => SessionContext | undefined;
     setContextStore?: (context: SessionContext) => void;
+    context?: any;
     globalProtect: boolean;
     exclude: string[];
     debug: boolean;
 }
+
+const CONFIG_KEY = Symbol.for('astro-sessionkit.config');
+const globalStorage = globalThis as any;
 
 const DEFAULT_CONFIG: ResolvedConfig = {
     loginPath: "/login",
@@ -36,7 +40,17 @@ const DEFAULT_CONFIG: ResolvedConfig = {
     debug: false,
 };
 
-let config: ResolvedConfig = { ...DEFAULT_CONFIG };
+// Initialize global storage if not present
+if (!globalStorage[CONFIG_KEY]) {
+    globalStorage[CONFIG_KEY] = Object.freeze({ ...DEFAULT_CONFIG });
+}
+
+/**
+ * Reset configuration to defaults (mainly for testing)
+ */
+export function resetConfig(): void {
+    globalStorage[CONFIG_KEY] = Object.freeze({ ...DEFAULT_CONFIG });
+}
 
 /**
  * Set configuration (called by integration)
@@ -113,7 +127,8 @@ export function setConfig(userConfig: SessionKitConfig): void {
     newConfig.runWithContext = userConfig.runWithContext;
     newConfig.getContextStore = userConfig.getContextStore;
     newConfig.setContextStore = userConfig.setContextStore;
-    
+    newConfig.context = userConfig.context;
+
     if (userConfig.globalProtect !== undefined) {
         newConfig.globalProtect = userConfig.globalProtect;
     }
@@ -137,12 +152,23 @@ export function setConfig(userConfig: SessionKitConfig): void {
     }
 
     // Atomic update
-    config = Object.freeze(newConfig);
+    globalStorage[CONFIG_KEY] = Object.freeze(newConfig);
 }
 
 /**
  * Get current configuration
  */
 export function getConfig(): ResolvedConfig {
-    return config;
+    return globalStorage[CONFIG_KEY] || DEFAULT_CONFIG;
+}
+
+// Handle injected configuration from Astro integration
+try {
+    // @ts-ignore
+    const injectedConfig = typeof __SESSIONKIT_CONFIG__ !== 'undefined' ? __SESSIONKIT_CONFIG__ : undefined;
+    if (injectedConfig) {
+        setConfig(injectedConfig);
+    }
+} catch (e) {
+    // Ignore errors in environments where __SESSIONKIT_CONFIG__ might be restricted
 }

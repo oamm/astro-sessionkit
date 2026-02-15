@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { debug, warn, error, info } from "../src/core/logger";
-import { setConfig } from "../src/core/config";
+import { setConfig, resetConfig } from "../src/core/config";
 
 describe("logger", () => {
   vi.spyOn(console, 'debug').mockImplementation(() => {});
@@ -11,6 +11,7 @@ describe("logger", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.NODE_ENV = 'development';
+    resetConfig();
   });
 
   afterEach(() => {

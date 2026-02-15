@@ -31,9 +31,7 @@ export function getContextStore(): SessionContext {
       : (context as AsyncLocalStorage<SessionContext>).getStore();
 
   if (!store) {
-    throw new Error(
-        'Astro context not found. Make sure to use api.middleware() to bind context automatically.'
-    );
+    return undefined as any;
   }
 
   return store;

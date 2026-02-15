@@ -5,13 +5,13 @@
 import {describe, it, expect, beforeEach} from "vitest";
 import {createGuardMiddleware} from "../src/core/guardMiddleware";
 import {runWithContext} from "../src/core/context";
-import {setConfig} from "../src/core/config";
+import {setConfig, resetConfig} from "../src/core/config";
 import {mockContext, mockSession, mockNext} from "./test-utils";
 
 describe("guardMiddleware", () => {
     beforeEach(() => {
         // Reset config before each test
-        setConfig({protect: []});
+        resetConfig();
     });
 
     describe("no protection rules", () => {

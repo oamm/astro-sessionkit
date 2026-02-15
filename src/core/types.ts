@@ -2,6 +2,18 @@
 // Core Session Types
 // ============================================================================
 
+import type {AstroCookies, AstroSession} from "astro";
+
+/**
+ * Minimal context required by SessionKit
+ */
+export interface SessionKitContext {
+  cookies: AstroCookies;
+  session?: AstroSession;
+  redirect: (path: string, status?: number) => Response;
+  [key: string]: any;
+}
+
 /**
  * The session object stored in context.locals.session
  * This is what your Astro app provides - we just read it.
@@ -31,6 +43,10 @@ export interface Session {
  */
 export interface SessionContext {
   session: Session | null;
+  /**
+   * Original Astro context (cookies, session, redirect, etc.)
+   */
+  astroContext?: SessionKitContext;
 }
 
 // ============================================================================
@@ -139,9 +155,15 @@ export interface SessionKitConfig {
    */
   exclude?: string[];
 
-  /**
-   * Enable debug logging
-   * @default false
-   */
-  debug?: boolean;
+    /**
+     * Optional external AsyncLocalStorage instance to use for session context.
+     * If provided, SessionKit will use this instead of its internal instance.
+     */
+    context?: any;
+
+    /**
+     * Enable debug logging
+     * @default false
+     */
+    debug?: boolean;
 }

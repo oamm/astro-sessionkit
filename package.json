@@ -39,7 +39,9 @@
     "test:coverage": "vitest run --coverage",
     "bench": "vitest bench run bench/",
     "prepublishOnly": "npm run clean && npm run build && npm run types:bundle",
-    "prepare": "npm run prepublishOnly"
+    "prepare": "npm run prepublishOnly",
+    "playground:install": "cd playground && npm install",
+    "playground:dev": "cd playground && npm run dev"
   },
   "keywords": [
     "astro",
