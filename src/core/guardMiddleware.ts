@@ -88,6 +88,7 @@ export function createGuardMiddleware(): MiddlewareHandler {
 
     // No rules configured and no global protect - skip
     if (protect.length === 0 && !globalProtect) {
+      logger.debug(`[Guard] Skipping ${pathname} because no rules are configured and globalProtect is false`);
       return next();
     }
 

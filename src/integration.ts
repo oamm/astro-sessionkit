@@ -44,16 +44,31 @@ export default function sessionKit(config: SessionKitConfig = {}): AstroIntegrat
         });
 
         // 2. Add route guard if there are protection rules or global protection is enabled
-        if ((resolvedConfig.protect && resolvedConfig.protect.length > 0) || resolvedConfig.globalProtect) {
+        const hasRules = (resolvedConfig.protect && resolvedConfig.protect.length > 0);
+        const isGlobal = !!resolvedConfig.globalProtect;
+
+        if (hasRules || isGlobal) {
           addMiddleware({
             entrypoint: "astro-sessionkit/guard",
             order: "pre",
           });
+        } else if (resolvedConfig.debug) {
+          console.log("[SessionKit] Route guard NOT registered: no rules and globalProtect is false.");
         }
       },
     },
   };
 }
 
-// Re-export types for convenience
-export type { Session, ProtectionRule, SessionKitConfig } from "./core/types";
+export type {
+  Session,
+  ProtectionRule,
+  RoleProtectionRule,
+  RolesProtectionRule,
+  PermissionProtectionRule,
+  PermissionsProtectionRule,
+  CustomProtectionRule,
+  SessionKitConfig,
+  AccessHooks,
+  SessionContext
+} from "./core/types";
