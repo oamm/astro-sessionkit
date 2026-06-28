@@ -74,18 +74,30 @@ async function checkRule(rule: ProtectionRule, session: Session | null): Promise
  */
 export function createGuardMiddleware(): MiddlewareHandler {
   return async (context, next) => {
+    // 1. Get normalized pathname from context.url (preferred in Astro) or request.url
     let pathname: string;
     try {
-        pathname = new URL(context.request.url).pathname;
+        const url = context.url || new URL(context.request.url);
+        pathname = url.pathname;
     } catch {
         pathname = "/";
     }
 
+    // Normalize pathname by removing trailing slash (except for root)
+    const normalizedPathname = pathname.length > 1 && pathname.endsWith("/") 
+        ? pathname.slice(0, -1) 
+        : pathname;
+
     const config = getConfig();
     const {protect, loginPath, globalProtect, exclude, debug} = config;
+    
+    // Normalize loginPath for comparison
+    const normalizedLoginPath = loginPath.length > 1 && loginPath.endsWith("/")
+        ? loginPath.slice(0, -1)
+        : loginPath;
 
     if (debug) {
-        logger.debug(`[Guard] Pathname: ${pathname}, GlobalProtect: ${globalProtect}, Rules: ${protect.length}`);
+        logger.debug(`[Guard] Pathname: ${pathname} (normalized: ${normalizedPathname}), GlobalProtect: ${globalProtect}, Rules: ${protect.length}`);
     }
 
     // No rules configured and no global protect - skip
@@ -103,8 +115,8 @@ export function createGuardMiddleware(): MiddlewareHandler {
         logger.debug(`[Guard] Session retrieved from store: ${session ? 'exists' : 'null'}`);
     }
 
-    // Find matching rule
-    const rule = protect.find((r) => matchesPattern(r.pattern, pathname));
+    // Find matching rule (using normalized path)
+    const rule = protect.find((r) => matchesPattern(r.pattern, normalizedPathname));
 
     if (rule && debug) {
         logger.debug(`[Guard] Found matching rule for ${pathname}:`, rule);
@@ -114,11 +126,12 @@ export function createGuardMiddleware(): MiddlewareHandler {
     if (!rule) {
         if (globalProtect) {
             // Skip if it's the login page itself (to avoid redirect loops)
-            if (pathname === loginPath) {
-                // NEW: If session is already present, redirect to home (/)
-                if (session && isValidSessionStructure(session)) {
+            if (normalizedPathname === normalizedLoginPath) {
+                // If session is already present, redirect to home (/) 
+                // ONLY for GET requests to avoid breaking POST login/actions
+                if (context.request.method === 'GET' && session && isValidSessionStructure(session)) {
                     if (debug) {
-                        logger.debug(`[GlobalProtect] Redirecting ${pathname} to / because session is already present`);
+                        logger.debug(`[GlobalProtect] Redirecting ${pathname} to / because session is already present (GET request)`);
                     }
                     return context.redirect('/');
                 }
@@ -129,8 +142,8 @@ export function createGuardMiddleware(): MiddlewareHandler {
                 return next();
             }
 
-            // Skip if path is in exclude list
-            if (exclude.some((pattern) => matchesPattern(pattern, pathname))) {
+            // Skip if path is in exclude list (using normalized path)
+            if (exclude.some((pattern) => matchesPattern(pattern, normalizedPathname))) {
                 if (debug) {
                     logger.debug(`[GlobalProtect] Skipping ${pathname} because it matches an exclude pattern`);
                 }

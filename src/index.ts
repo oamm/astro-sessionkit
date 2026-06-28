@@ -27,4 +27,4 @@ export type {
 // Version export
 // ============================================================================
 
-export const version = "0.1.20";
+export const version = "0.1.24";

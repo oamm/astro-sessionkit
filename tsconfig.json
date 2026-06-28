@@ -14,10 +14,12 @@
     "declarationMap": true,
     "sourceMap": true,
     "inlineSources": true,
+    "rootDir": "./src",
     "outDir": "./dist",
     "removeComments": true,
     "importHelpers": false,
     "downlevelIteration": true,
+    "ignoreDeprecations": "6.0",
 
     /* Interop Constraints */
     "esModuleInterop": true,
