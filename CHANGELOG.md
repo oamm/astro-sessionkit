@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.26 - 2026-07-08
+
+- Fixes Astro dev mode when SessionKit config contains custom context functions by avoiding generated runtime wrappers outside production builds.
+
 ## 0.1.25 - 2026-07-08
 
 - Fixes production server builds by generating runtime middleware entrypoints that configure SessionKit inside Astro's bundled server runtime.

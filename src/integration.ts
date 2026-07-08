@@ -91,9 +91,11 @@ export default function sessionKit(config: SessionKitConfig = {}): AstroIntegrat
   return {
     name: "astro-sessionkit",
     hooks: {
-      "astro:config:setup": ({ addMiddleware, createCodegenDir }) => {
-        const codegenDir = createCodegenDir();
-        const sessionMiddlewareEntrypoint = createRuntimeEntrypoint(codegenDir, "middleware", config);
+      "astro:config:setup": ({ addMiddleware, createCodegenDir, command }) => {
+        const codegenDir = command === "build" ? createCodegenDir() : undefined;
+        const sessionMiddlewareEntrypoint = codegenDir
+          ? createRuntimeEntrypoint(codegenDir, "middleware", config)
+          : "astro-sessionkit/middleware";
 
         // 1. Always add session context middleware first
         addMiddleware({
@@ -106,7 +108,9 @@ export default function sessionKit(config: SessionKitConfig = {}): AstroIntegrat
         const isGlobal = !!resolvedConfig.globalProtect;
 
         if (hasRules || isGlobal) {
-          const guardEntrypoint = createRuntimeEntrypoint(codegenDir, "guard", config);
+          const guardEntrypoint = codegenDir
+            ? createRuntimeEntrypoint(codegenDir, "guard", config)
+            : "astro-sessionkit/guard";
           addMiddleware({
             entrypoint: guardEntrypoint,
             order: "post",
