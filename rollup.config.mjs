@@ -8,6 +8,7 @@ export default [
             server: "src/server.ts",
             middleware: "src/middleware.ts",
             guard: "src/guard.ts",
+            runtime: "src/runtime.ts",
         },
         output: {
             dir: "dist",
@@ -21,6 +22,7 @@ export default [
             // Node.js built-ins
             "node:async_hooks",
             "node:crypto",
+            "node:fs",
 
             // Astro
             "astro",
@@ -66,6 +68,15 @@ export default [
         input: "src/guard.ts",
         output: {
             file: "dist/guard.d.ts",
+            format: "esm",
+        },
+        external: ["astro", "astro:middleware"],
+        plugins: [dts()],
+    },
+    {
+        input: "src/runtime.ts",
+        output: {
+            file: "dist/runtime.d.ts",
             format: "esm",
         },
         external: ["astro", "astro:middleware"],

@@ -13,7 +13,7 @@ export default defineConfig({
         cookie: {
             name: "my-session-cookie",
             sameSite: "lax",
-            secure: true,
+            secure: process.env.SESSION_COOKIE_SECURE === 'true',
         },
     },
     vite: {

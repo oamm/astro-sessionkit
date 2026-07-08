@@ -40,7 +40,7 @@ export const POST: APIRoute = async (context) => {
   const user = await authenticateUser(credentials);
   
   // Register with SessionKit
-  setSession(context, { userId: user.id, role: user.role });
+  setSession({ userId: user.id, role: user.role }, context);
   
   // DANGEROUS - Plain cookie, no encryption!
   context.cookies.set('session', JSON.stringify({ 
@@ -61,12 +61,12 @@ export const POST: APIRoute = async (context) => {
   const user = await authenticateUser(credentials);
   
   // 1. Register with SessionKit
-  setSession(context, {
+  setSession({
     userId: user.id,
     email: user.email,
     role: user.role,
     permissions: user.permissions
-  });
+  }, context);
   
   // 2. Store encrypted session ID
   const sessionId = crypto.randomUUID();

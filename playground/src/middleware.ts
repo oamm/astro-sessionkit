@@ -6,7 +6,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const sessionData = context.cookies.get('__session_mock__')?.json();
   
   if (sessionData && context.session) {
-    setSession(sessionData);
+    setSession(sessionData, context);
   }
   
   return next();

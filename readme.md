@@ -100,12 +100,12 @@ export const POST: APIRoute = async (context) => {
   
   if (user) {
     // Register session with SessionKit
-    setSession(context, {
+    setSession({
       userId: user.id,
       email: user.email,
       role: user.role,
       permissions: user.permissions
-    });
+    }, context);
     
     // Store session ID (YOUR storage logic)
     const sessionId = await createSessionInDatabase(user.id);
@@ -146,13 +146,13 @@ const session = requireSession();
 
 ### Session Management Functions
 
-#### `setSession(context, session)`
+#### `setSession(session, context?)`
 
 Register a session after successful authentication.
 
 **Parameters:**
-- `context: APIContext` - Astro API context
 - `session: Session` - Session data to register
+- `context?: APIContext` - Astro API context. Required when calling before SessionKit middleware has initialized, such as in your own `src/middleware.ts`.
 
 **Throws:** Error if session structure is invalid
 
@@ -162,19 +162,19 @@ import { setSession } from 'astro-sessionkit/server';
 export const POST: APIRoute = async (context) => {
   const user = await authenticateUser(credentials);
   
-  setSession(context, {
+  setSession({
     userId: user.id,
     email: user.email,
     role: user.role,
     permissions: user.permissions
-  });
+  }, context);
   
   // Also store in cookies/database
   context.cookies.set('session_id', sessionId);
 };
 ```
 
-#### `clearSession(context)`
+#### `clearSession(context?)`
 
 Clear the session during logout.
 
@@ -192,13 +192,13 @@ export const POST: APIRoute = async (context) => {
 };
 ```
 
-#### `updateSession(context, updates)`
+#### `updateSession(updates, context?)`
 
 Update specific fields in the current session.
 
 **Parameters:**
-- `context: APIContext` - Astro API context
 - `updates: Partial<Session>` - Fields to update
+- `context?: APIContext` - Astro API context
 
 **Throws:** Error if no session exists or updated session is invalid
 
@@ -207,10 +207,10 @@ import { updateSession } from 'astro-sessionkit/server';
 
 export const POST: APIRoute = async (context) => {
   // Update user's role
-  updateSession(context, { 
+  updateSession({ 
     role: 'admin',
     permissions: ['admin:read', 'admin:write']
-  });
+  }, context);
   
   // Also update in your storage
   await db.updateSession(sessionId, updates);
@@ -517,7 +517,7 @@ export const POST: APIRoute = async (context) => {
   const { newRole } = await context.request.json();
   
   // Update in SessionKit
-  updateSession(context, { role: newRole });
+  updateSession({ role: newRole }, context);
   
   // Also update in your database
   const sessionId = context.cookies.get('session_id')?.value;
@@ -557,12 +557,12 @@ export const POST: APIRoute = async (context) => {
   });
   
   // 3. Register with SessionKit
-  setSession(context, {
+  setSession({
     userId: user.id,
     email: user.email,
     role: user.role,
     permissions: user.permissions
-  });
+  }, context);
   
   // 4. Set secure cookie
   context.cookies.set('session_id', sessionId, {

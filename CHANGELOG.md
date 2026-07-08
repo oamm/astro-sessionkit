@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.25 - 2026-07-08
+
+- Fixes production server builds by generating runtime middleware entrypoints that configure SessionKit inside Astro's bundled server runtime.
+- Registers SessionKit middleware with `post` order so application middleware can populate `context.session` before SessionKit reads it.
+- Adds the internal `astro-sessionkit/runtime` export used by generated middleware wrappers.
+- Fixes the playground production preview by making the session cookie `secure` flag opt-in through `SESSION_COOKIE_SECURE=true`.
+- Updates README and security examples to use the current `setSession(session, context?)` and `updateSession(updates, context?)` API order.
+
 ## 0.1.24 - 2026-06-28
 
 - Adds Astro 7 to the supported peer dependency range.
