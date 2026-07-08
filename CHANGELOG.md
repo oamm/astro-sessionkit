@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.27 - 2026-07-08
+
+- Restores SessionKit middleware registration to Astro's `pre` phase so the session context is initialized before application middleware.
+- Updates middleware setup documentation to use `setSession(session, context)`, which updates the active SessionKit context during the same request.
+
 ## 0.1.26 - 2026-07-08
 
 - Fixes Astro dev mode when SessionKit config contains custom context functions by avoiding generated runtime wrappers outside production builds.

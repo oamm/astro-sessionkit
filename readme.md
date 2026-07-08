@@ -61,6 +61,7 @@ SessionKit reads from `context.session.get('__session__')`. You set it up in you
 ```ts
 // src/middleware.ts
 import { defineMiddleware } from 'astro:middleware';
+import { setSession } from 'astro-sessionkit/server';
 
 export const onRequest = defineMiddleware(async (context, next) => {
   // Get session from wherever you store it
@@ -70,13 +71,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (sessionId) {
     const user = await db.getUserBySessionId(sessionId);
     
-    // Set session for SessionKit to read
-    context.session.set('__session__', {
+    // Set session for SessionKit to read during this request and persist
+    // through Astro's session store.
+    setSession({
       userId: user.id,
       email: user.email,
       role: user.role,
       permissions: user.permissions
-    });
+    }, context);
   }
   
   return next();

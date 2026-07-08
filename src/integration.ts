@@ -100,7 +100,7 @@ export default function sessionKit(config: SessionKitConfig = {}): AstroIntegrat
         // 1. Always add session context middleware first
         addMiddleware({
           entrypoint: sessionMiddlewareEntrypoint,
-          order: "post",
+          order: "pre",
         });
 
         // 2. Add route guard if there are protection rules or global protection is enabled
@@ -113,7 +113,7 @@ export default function sessionKit(config: SessionKitConfig = {}): AstroIntegrat
             : "astro-sessionkit/guard";
           addMiddleware({
             entrypoint: guardEntrypoint,
-            order: "post",
+            order: "pre",
           });
         } else if (resolvedConfig.debug) {
           console.log("[SessionKit] Route guard NOT registered: no rules and globalProtect is false.");
