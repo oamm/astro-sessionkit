@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.28 - 2026-07-09
+
+- Adds opt-in `touchOnRequest` support so valid authenticated sessions can refresh Astro session store TTL on each request.
+- Adds `touchSessionKey` to customize the Astro session key rewritten when request touching is enabled.
+- Adds focused middleware tests for default behavior, valid session touching, invalid or missing sessions, custom touch keys, and missing `session.set`.
+- Adds a test TypeScript config so tests can be typechecked without conflicting with the package build `rootDir`.
+
 ## 0.1.27 - 2026-07-08
 
 - Restores SessionKit middleware registration to Astro's `pre` phase so the session context is initialized before application middleware.
