@@ -166,4 +166,17 @@ export interface SessionKitConfig {
      * @default false
      */
     debug?: boolean;
+
+    /**
+     * Rewrite the current valid session on each request so Astro can refresh
+     * the backing store TTL.
+     * @default false
+     */
+    touchOnRequest?: boolean;
+
+    /**
+     * Astro session key to rewrite when touchOnRequest is enabled.
+     * @default "__session__"
+     */
+    touchSessionKey?: string;
 }

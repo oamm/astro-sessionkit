@@ -22,6 +22,8 @@ export interface ResolvedConfig {
     globalProtect: boolean;
     exclude: string[];
     debug: boolean;
+    touchOnRequest: boolean;
+    touchSessionKey: string;
 }
 
 const CONFIG_KEY = Symbol.for('astro-sessionkit.config');
@@ -38,6 +40,8 @@ const DEFAULT_CONFIG: ResolvedConfig = {
     globalProtect: false,
     exclude: [],
     debug: false,
+    touchOnRequest: false,
+    touchSessionKey: "__session__",
 };
 
 // Initialize global storage if not present
@@ -149,6 +153,14 @@ export function setConfig(userConfig: SessionKitConfig): void {
 
     if (userConfig.debug !== undefined) {
         newConfig.debug = userConfig.debug;
+    }
+
+    if (userConfig.touchOnRequest !== undefined) {
+        newConfig.touchOnRequest = userConfig.touchOnRequest;
+    }
+
+    if (userConfig.touchSessionKey !== undefined) {
+        newConfig.touchSessionKey = userConfig.touchSessionKey;
     }
 
     // Atomic update

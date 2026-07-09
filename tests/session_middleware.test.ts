@@ -2,12 +2,17 @@
 // Session Middleware Tests
 // ============================================================================
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { sessionMiddleware } from "../src/core/sessionMiddleware";
 import { getContextStore } from "../src/core/context";
+import { resetConfig, setConfig } from "../src/core/config";
 import { mockContext, mockSession, mockNext, SESSION_KEY } from "./test-utils";
 
 describe("sessionMiddleware", () => {
+  beforeEach(() => {
+    resetConfig();
+  });
+
   it("sets session context from context.session.get('__session__')", async () => {
     const session = mockSession({ userId: "123", email: "test@example.com" });
     const ctx = mockContext({ session });
@@ -28,6 +33,71 @@ describe("sessionMiddleware", () => {
     expect(next).toHaveBeenCalled();
     // Verify session was read from the store
     expect(ctx.session.get).toHaveBeenCalledWith(SESSION_KEY);
+  });
+
+  it("does not touch session by default", async () => {
+    const session = mockSession();
+    const ctx = mockContext({ session });
+
+    await sessionMiddleware(ctx as any, mockNext() as any);
+
+    expect(ctx.session.set).not.toHaveBeenCalled();
+  });
+
+  it("touches valid session when enabled", async () => {
+    const session = mockSession();
+    const ctx = mockContext({ session });
+
+    setConfig({ touchOnRequest: true });
+
+    await sessionMiddleware(ctx as any, mockNext() as any);
+
+    expect(ctx.session.set).toHaveBeenCalledWith(SESSION_KEY, session);
+  });
+
+  it("touches valid session using custom key when configured", async () => {
+    const session = mockSession();
+    const ctx = mockContext({ session });
+
+    setConfig({ touchOnRequest: true, touchSessionKey: "custom-session" });
+
+    await sessionMiddleware(ctx as any, mockNext() as any);
+
+    expect(ctx.session.set).toHaveBeenCalledWith("custom-session", session);
+  });
+
+  it("does not touch when session.set is unavailable", async () => {
+    const session = mockSession();
+    const ctx = mockContext({ session });
+    delete (ctx.session as any).set;
+
+    setConfig({ touchOnRequest: true });
+
+    await sessionMiddleware(ctx as any, mockNext() as any);
+
+    expect(ctx.session._store.get(SESSION_KEY)).toEqual(session);
+  });
+
+  it("does not touch invalid session", async () => {
+    const invalidSession = { email: "test@example.com" };
+    const ctx = mockContext();
+    ctx.session._store.set(SESSION_KEY, invalidSession);
+
+    setConfig({ touchOnRequest: true });
+
+    await sessionMiddleware(ctx as any, mockNext() as any);
+
+    expect(ctx.session.set).not.toHaveBeenCalled();
+  });
+
+  it("does not touch when session is missing", async () => {
+    const ctx = mockContext({ session: null });
+
+    setConfig({ touchOnRequest: true });
+
+    await sessionMiddleware(ctx as any, mockNext() as any);
+
+    expect(ctx.session.set).not.toHaveBeenCalled();
   });
 
   it("handles null session (unauthenticated user)", async () => {

@@ -38,6 +38,9 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
     if (rawSession) {
         if (isValidSessionStructure(rawSession)) {
             session = rawSession;
+            if (config.touchOnRequest && typeof context.session?.set === "function") {
+                await context.session.set(config.touchSessionKey, session);
+            }
         } else {
             // Invalid session structure - log warning and treat as unauthenticated
             logger.warn(
