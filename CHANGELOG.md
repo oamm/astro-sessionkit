@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.29 - 2026-07-09
+
+- Updates the package toolchain and runtime dependencies, including Astro 7.0.7, Vite 8.1.4, Vitest 4.1.10, `@types/node` 26.1.1, and Undici 8.7.0.
+
 ## 0.1.28 - 2026-07-09
 
 - Adds opt-in `touchOnRequest` support so valid authenticated sessions can refresh Astro session store TTL on each request.
