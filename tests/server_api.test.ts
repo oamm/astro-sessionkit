@@ -38,6 +38,23 @@ describe("server API", () => {
       });
     });
 
+    it("returns null for empty session object", async () => {
+      await runWithContext({ session: {} as any }, () => {
+        expect(getSession()).toBeNull();
+      });
+    });
+
+    it("returns null for malformed session object", async () => {
+      const malformedSession = {
+        userId: "123",
+        permissions: Array(1000).fill("perm"),
+      };
+
+      await runWithContext({ session: malformedSession as any }, () => {
+        expect(getSession()).toBeNull();
+      });
+    });
+
     it("returns null outside session context", () => {
       const result = getSession();
       expect(result).toBeNull();
@@ -84,6 +101,12 @@ describe("server API", () => {
 
     it("returns false when no session", async () => {
       await runWithContext({ session: null }, () => {
+        expect(isAuthenticated()).toBe(false);
+      });
+    });
+
+    it("returns false for invalid session object", async () => {
+      await runWithContext({ session: {} as any }, () => {
         expect(isAuthenticated()).toBe(false);
       });
     });

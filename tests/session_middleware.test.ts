@@ -90,6 +90,43 @@ describe("sessionMiddleware", () => {
     expect(ctx.session.set).not.toHaveBeenCalled();
   });
 
+  it("deletes invalid stored session and sets request context session to null", async () => {
+    const invalidSession = {};
+    const ctx = mockContext();
+    ctx.session._store.set(SESSION_KEY, invalidSession);
+
+    const next = mockNext();
+    next.mockImplementation(() => {
+      expect(getContextStore()?.session).toBeNull();
+      return new Response("ok");
+    });
+
+    await sessionMiddleware(ctx as any, next as any);
+
+    expect(ctx.session.delete).toHaveBeenCalledWith(SESSION_KEY);
+    expect(ctx.session._store.has(SESSION_KEY)).toBe(false);
+  });
+
+  it("destroys backing session when supported for invalid stored session", async () => {
+    const ctx = mockContext();
+    ctx.session._store.set(SESSION_KEY, { roles: "admin" });
+    (ctx.session as any).destroy = vi.fn();
+
+    await sessionMiddleware(ctx as any, mockNext() as any);
+
+    expect((ctx.session as any).destroy).toHaveBeenCalled();
+  });
+
+  it("preserves valid stored session", async () => {
+    const session = mockSession();
+    const ctx = mockContext({ session });
+
+    await sessionMiddleware(ctx as any, mockNext() as any);
+
+    expect(ctx.session.delete).not.toHaveBeenCalled();
+    expect(ctx.session._store.get(SESSION_KEY)).toEqual(session);
+  });
+
   it("does not touch when session is missing", async () => {
     const ctx = mockContext({ session: null });
 

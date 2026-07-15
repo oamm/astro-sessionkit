@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.30 - 2026-07-15
+
+- Treats only structurally valid session objects as authenticated in `getSession()`, `isAuthenticated()`, and middleware request context.
+- Deletes invalid stored `__session__` values from Astro sessions and calls `destroy()` when the backing session API supports it.
+- Adds targeted coverage for empty, malformed, invalid stored, and valid preserved session behavior.
+
 ## 0.1.29 - 2026-07-09
 
 - Updates the package toolchain and runtime dependencies, including Astro 7.0.7, Vite 8.1.4, Vitest 4.1.10, `@types/node` 26.1.1, and Undici 8.7.0.

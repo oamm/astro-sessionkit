@@ -30,24 +30,28 @@ export const sessionMiddleware: MiddlewareHandler = async (context, next) => {
     const {runWithContext, getContextStore, setContextStore, context: externalContext, debug} = config;
 
     // Get session from context.session store
-    const rawSession = await context.session?.get<Session>(SESSION_KEY) ?? null;
+    const rawSession = await context.session?.get<unknown>(SESSION_KEY) ?? null;
 
     // Validate session structure if present
     let session: Session | null = null;
 
-    if (rawSession) {
+    if (rawSession !== null) {
         if (isValidSessionStructure(rawSession)) {
             session = rawSession;
             if (config.touchOnRequest && typeof context.session?.set === "function") {
                 await context.session.set(config.touchSessionKey, session);
             }
         } else {
-            // Invalid session structure - log warning and treat as unauthenticated
+            // Invalid session structure - log warning, remove it, and treat as unauthenticated
             logger.warn(
                 'Invalid session structure detected. Session will be ignored. ' +
                 'Ensure context.session.set("__session__", ...) has the correct structure. ' +
                 'Received: ' + JSON.stringify(rawSession)
             );
+            await context.session?.delete(SESSION_KEY);
+            if (typeof (context.session as any)?.destroy === "function") {
+                await (context.session as any).destroy();
+            }
             session = null;
         }
     }

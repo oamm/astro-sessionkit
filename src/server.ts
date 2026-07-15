@@ -20,7 +20,16 @@ import type {Session, SessionKitContext} from "./core/types";
  */
 export function getSession(): Session | null {
     const context = getContextStore();
-    return context?.session ?? null;
+    const session = context?.session ?? null;
+
+    if (!isValidSessionStructure(session)) {
+        if (context && session !== null) {
+            context.session = null;
+        }
+        return null;
+    }
+
+    return session;
 }
 
 /**
