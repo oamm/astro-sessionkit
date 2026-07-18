@@ -2,7 +2,7 @@
 // Server API Tests
 // ============================================================================
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   getSession,
   requireSession,
@@ -17,9 +17,14 @@ import {
   updateSession,
 } from "../src/server";
 import { runWithContext } from "../src/core/context";
+import { resetConfig, setConfig } from "../src/core/config";
 import { mockSession, mockContext, SESSION_KEY } from "./test-utils";
 
 describe("server API", () => {
+  beforeEach(() => {
+    resetConfig();
+  });
+
   describe("getSession", () => {
     it("returns session when authenticated", async () => {
       const session = mockSession({ userId: "123" });
@@ -363,6 +368,10 @@ describe("server API", () => {
 });
 
 describe("session management", () => {
+  beforeEach(() => {
+    resetConfig();
+  });
+
   describe("setSession", () => {
     it("sets valid session in context.session", () => {
       const context = mockContext();
@@ -372,6 +381,27 @@ describe("session management", () => {
 
       // Verify session was stored
       expect(context.session.set).toHaveBeenCalledWith(SESSION_KEY, session);
+      expect(context.session._store.get(SESSION_KEY)).toEqual(session);
+    });
+
+    it("passes ttl options to Astro session storage", () => {
+      const context = mockContext();
+      const session = mockSession({ userId: "123", role: "admin" });
+
+      setSession(session, context as any, { ttl: 3600 });
+
+      expect(context.session.set).toHaveBeenCalledWith(SESSION_KEY, session, { ttl: 3600 });
+      expect(context.session._store.get(SESSION_KEY)).toEqual(session);
+    });
+
+    it("uses configured ttl when ttl options are omitted", () => {
+      const context = mockContext();
+      const session = mockSession({ userId: "123", role: "admin" });
+      setConfig({ sessionTtl: 1800 });
+
+      setSession(session, context as any);
+
+      expect(context.session.set).toHaveBeenCalledWith(SESSION_KEY, session, { ttl: 1800 });
       expect(context.session._store.get(SESSION_KEY)).toEqual(session);
     });
 
@@ -385,6 +415,18 @@ describe("session management", () => {
 
       // Verify session was stored in the context provided via ALS
       expect(context.session.set).toHaveBeenCalledWith(SESSION_KEY, session);
+      expect(context.session._store.get(SESSION_KEY)).toEqual(session);
+    });
+
+    it("passes ttl options using AsyncLocalStorage context", async () => {
+      const context = mockContext();
+      const session = mockSession({ userId: "123", role: "admin" });
+
+      await runWithContext({ session: null, astroContext: context as any }, () => {
+        setSession(session, { ttl: 3600 });
+      });
+
+      expect(context.session.set).toHaveBeenCalledWith(SESSION_KEY, session, { ttl: 3600 });
       expect(context.session._store.get(SESSION_KEY)).toEqual(session);
     });
 
@@ -516,6 +558,17 @@ describe("session management", () => {
         role: "admin",
         permissions: ["read", "write", "delete"],
       });
+    });
+
+    it("passes ttl options when updating session fields", () => {
+      const session = mockSession({ userId: "123", role: "user" });
+      const context = mockContext({ session });
+
+      updateSession({ role: "admin" }, context as any, { ttl: 3600 });
+
+      expect(context.session.set).toHaveBeenCalledWith(SESSION_KEY, expect.objectContaining({
+        role: "admin"
+      }), { ttl: 3600 });
     });
 
     it("throws error when no session exists", () => {

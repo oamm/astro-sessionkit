@@ -4,7 +4,8 @@
 
 import {getContextStore} from "./core/context";
 import {isValidSessionStructure} from "./core/validation";
-import type {Session, SessionKitContext} from "./core/types";
+import type {Session, SessionKitContext, SessionSetOptions} from "./core/types";
+import {getConfig} from "./core/config";
 
 /**
  * Get the current session (returns null if not authenticated)
@@ -139,6 +140,7 @@ export function hasRolePermission(role: string, permission: string): boolean {
  *
  * @param session - Session data to set
  * @param context - Astro API context (optional if called within request context)
+ * @param options - Astro session storage options
  *
  * @throws {Error} If session structure is invalid or context missing
  *
@@ -166,8 +168,20 @@ export function hasRolePermission(role: string, permission: string): boolean {
  * };
  * ```
  */
-export function setSession(session: Session, context?: SessionKitContext): void {
+export function setSession(session: Session, options?: SessionSetOptions): void;
+export function setSession(session: Session, context?: SessionKitContext, options?: SessionSetOptions): void;
+export function setSession(
+    session: Session,
+    contextOrOptions?: SessionKitContext | SessionSetOptions,
+    options?: SessionSetOptions
+): void {
     const store = getContextStore();
+    const hasContextShape = contextOrOptions &&
+        ("cookies" in contextOrOptions || "session" in contextOrOptions || "redirect" in contextOrOptions);
+    const context = hasContextShape ? contextOrOptions as SessionKitContext : undefined;
+    const configuredTtl = getConfig().sessionTtl;
+    const defaultOptions = configuredTtl !== undefined ? {ttl: configuredTtl} : undefined;
+    const sessionOptions = (hasContextShape ? options : contextOrOptions as SessionSetOptions | undefined) ?? defaultOptions;
     const ctx = context || store?.astroContext;
 
     if (!ctx) {
@@ -190,7 +204,11 @@ export function setSession(session: Session, context?: SessionKitContext): void 
     }
 
     // Set in context.session for Astro to persist
-    ctx.session?.set('__session__', session);
+    if (sessionOptions) {
+        ctx.session?.set('__session__', session, sessionOptions);
+    } else {
+        ctx.session?.set('__session__', session);
+    }
 }
 
 /**
@@ -200,6 +218,7 @@ export function setSession(session: Session, context?: SessionKitContext): void 
  * you must do that separately.
  *
  * @param context - Astro API context (optional if called within request context)
+ * @param options - Astro session storage options
  *
  * @example
  * ```ts
@@ -300,8 +319,18 @@ export function regenerateSession(context?: SessionKitContext): void {
  * };
  * ```
  */
-export function updateSession(updates: Partial<Session>, context?: SessionKitContext): void {
+export function updateSession(updates: Partial<Session>, options?: SessionSetOptions): void;
+export function updateSession(updates: Partial<Session>, context?: SessionKitContext, options?: SessionSetOptions): void;
+export function updateSession(
+    updates: Partial<Session>,
+    contextOrOptions?: SessionKitContext | SessionSetOptions,
+    options?: SessionSetOptions
+): void {
     const store = getContextStore();
+    const hasContextShape = contextOrOptions &&
+        ("cookies" in contextOrOptions || "session" in contextOrOptions || "redirect" in contextOrOptions);
+    const context = hasContextShape ? contextOrOptions as SessionKitContext : undefined;
+    const sessionOptions = hasContextShape ? options : contextOrOptions as SessionSetOptions | undefined;
     const ctx = context || store?.astroContext;
 
     if (!ctx) {
@@ -334,5 +363,5 @@ export function updateSession(updates: Partial<Session>, context?: SessionKitCon
     const updatedSession = {...session, ...updates};
 
     // Use setSession to handle validation and both store updates
-    setSession(updatedSession, ctx);
+    setSession(updatedSession, ctx, sessionOptions);
 }

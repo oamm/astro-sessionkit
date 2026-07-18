@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.31 - 2026-07-18
+
+- Adds `ttl` forwarding for `setSession()` and `updateSession()` so callers can pass Astro session expiration options.
+- Adds `sessionTtl` configuration as the default TTL for SessionKit writes and `touchOnRequest` rewrites.
+- Documents fixed-expiration versus sliding-expiration session behavior.
+- Adds focused tests for per-call TTL, configured TTL, and TTL-aware request touching.
+
 ## 0.1.30 - 2026-07-15
 
 - Treats only structurally valid session objects as authenticated in `getSession()`, `isAuthenticated()`, and middleware request context.

@@ -55,6 +55,17 @@ describe("sessionMiddleware", () => {
     expect(ctx.session.set).toHaveBeenCalledWith(SESSION_KEY, session);
   });
 
+  it("passes configured ttl when touching valid session", async () => {
+    const session = mockSession();
+    const ctx = mockContext({ session });
+
+    setConfig({ touchOnRequest: true, sessionTtl: 3600 });
+
+    await sessionMiddleware(ctx as any, mockNext() as any);
+
+    expect(ctx.session.set).toHaveBeenCalledWith(SESSION_KEY, session, { ttl: 3600 });
+  });
+
   it("touches valid session using custom key when configured", async () => {
     const session = mockSession();
     const ctx = mockContext({ session });

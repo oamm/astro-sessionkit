@@ -39,6 +39,16 @@ export interface Session {
 }
 
 /**
+ * Options forwarded to Astro's session storage when writing a session.
+ */
+export interface SessionSetOptions {
+  /**
+   * Expiration time for the session value, in seconds.
+   */
+  ttl?: number;
+}
+
+/**
  * What we store in AsyncLocalStorage
  */
 export interface SessionContext {
@@ -173,6 +183,11 @@ export interface SessionKitConfig {
      * @default false
      */
     touchOnRequest?: boolean;
+
+    /**
+     * Default expiration time, in seconds, to pass to Astro session writes.
+     */
+    sessionTtl?: number;
 
     /**
      * Astro session key to rewrite when touchOnRequest is enabled.

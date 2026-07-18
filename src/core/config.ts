@@ -23,6 +23,7 @@ export interface ResolvedConfig {
     exclude: string[];
     debug: boolean;
     touchOnRequest: boolean;
+    sessionTtl?: number;
     touchSessionKey: string;
 }
 
@@ -41,6 +42,7 @@ const DEFAULT_CONFIG: ResolvedConfig = {
     exclude: [],
     debug: false,
     touchOnRequest: false,
+    sessionTtl: undefined,
     touchSessionKey: "__session__",
 };
 
@@ -157,6 +159,15 @@ export function setConfig(userConfig: SessionKitConfig): void {
 
     if (userConfig.touchOnRequest !== undefined) {
         newConfig.touchOnRequest = userConfig.touchOnRequest;
+    }
+
+    if (userConfig.sessionTtl !== undefined) {
+        if (!Number.isFinite(userConfig.sessionTtl) || userConfig.sessionTtl <= 0) {
+            throw new Error(
+                `[SessionKit] Invalid sessionTtl: "${userConfig.sessionTtl}". Must be a positive number of seconds.`
+            );
+        }
+        newConfig.sessionTtl = userConfig.sessionTtl;
     }
 
     if (userConfig.touchSessionKey !== undefined) {

@@ -15,7 +15,7 @@ export const SESSION_KEY = "__session__";
  */
 export type MockSessionStore = {
     get: <T = unknown>(key: string) => T | undefined;
-    set: (key: string, value: unknown) => void;
+    set: (key: string, value: unknown, options?: { ttl: number }) => void;
     delete: (key: string) => void;
     has: (key: string) => boolean;
     regenerate: () => void;
@@ -24,7 +24,7 @@ export type MockSessionStore = {
 
 
 type StoreGet = <T = unknown>(key: string) => T | undefined;
-type StoreSet = (key: string, value: unknown) => void;
+type StoreSet = (key: string, value: unknown, options?: { ttl: number }) => void;
 type StoreDelete = (key: string) => void;
 type StoreHas = (key: string) => boolean;
 

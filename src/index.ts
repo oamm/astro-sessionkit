@@ -20,11 +20,12 @@ export type {
     CustomProtectionRule,
     SessionKitConfig,
     AccessHooks,
-    SessionContext
+    SessionContext,
+    SessionSetOptions
 } from "./core/types";
 
 // ============================================================================
 // Version export
 // ============================================================================
 
-export const version = "0.1.24";
+export const version = "0.1.31";

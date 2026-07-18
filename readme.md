@@ -148,13 +148,14 @@ const session = requireSession();
 
 ### Session Management Functions
 
-#### `setSession(session, context?)`
+#### `setSession(session, context?, options?)`
 
 Register a session after successful authentication.
 
 **Parameters:**
 - `session: Session` - Session data to register
 - `context?: APIContext` - Astro API context. Required when calling before SessionKit middleware has initialized, such as in your own `src/middleware.ts`.
+- `options?: { ttl: number }` - Astro session storage options. `ttl` is the value expiration time in seconds.
 
 **Throws:** Error if session structure is invalid
 
@@ -169,12 +170,22 @@ export const POST: APIRoute = async (context) => {
     email: user.email,
     role: user.role,
     permissions: user.permissions
-  }, context);
+  }, context, { ttl: 3600 });
   
   // Also store in cookies/database
   context.cookies.set('session_id', sessionId);
 };
 ```
+
+You can also configure a default Astro session TTL for all SessionKit writes:
+
+```ts
+sessionkit({
+  sessionTtl: 3600
+})
+```
+
+Per-call options take precedence over the configured default.
 
 #### `clearSession(context?)`
 
@@ -194,13 +205,14 @@ export const POST: APIRoute = async (context) => {
 };
 ```
 
-#### `updateSession(updates, context?)`
+#### `updateSession(updates, context?, options?)`
 
 Update specific fields in the current session.
 
 **Parameters:**
 - `updates: Partial<Session>` - Fields to update
 - `context?: APIContext` - Astro API context
+- `options?: { ttl: number }` - Astro session storage options. `ttl` is the value expiration time in seconds.
 
 **Throws:** Error if no session exists or updated session is invalid
 
