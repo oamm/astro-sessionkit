@@ -2,15 +2,22 @@
 // Session Middleware Tests
 // ============================================================================
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { sessionMiddleware } from "../src/core/sessionMiddleware";
 import { getContextStore } from "../src/core/context";
 import { resetConfig, setConfig } from "../src/core/config";
 import { mockContext, mockSession, mockNext, SESSION_KEY } from "./test-utils";
 
 describe("sessionMiddleware", () => {
+  const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
   beforeEach(() => {
+    vi.clearAllMocks();
     resetConfig();
+  });
+
+  afterEach(() => {
+    consoleLogSpy.mockClear();
   });
 
   it("sets session context from context.session.get('__session__')", async () => {
@@ -292,5 +299,34 @@ describe("sessionMiddleware", () => {
     });
 
     await sessionMiddleware(ctx as any, next as any);
+  });
+
+  it("logs detailed session evaluation when debug is enabled", async () => {
+    const session = mockSession({ permissions: ["settings:read"] });
+    const ctx = mockContext({ session });
+
+    setConfig({ debug: true, touchOnRequest: true, sessionTtl: 3600 });
+
+    await sessionMiddleware(ctx as any, mockNext() as any);
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "[SessionKit] [SessionMiddleware] Read session from Astro store",
+      expect.objectContaining({
+        key: SESSION_KEY,
+        sessionStoreAvailable: true,
+        rawSession: expect.objectContaining({
+          keys: expect.arrayContaining(["userId", "email", "role", "roles", "permissions"]),
+          permissionsCount: 1,
+        }),
+      })
+    );
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "[SessionKit] [SessionMiddleware] Session validation result",
+      expect.objectContaining({ valid: true })
+    );
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "[SessionKit] [SessionMiddleware] Touched valid session",
+      { key: SESSION_KEY, ttl: 3600 }
+    );
   });
 });

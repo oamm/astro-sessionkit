@@ -2,14 +2,17 @@
 // Guard Middleware Tests
 // ============================================================================
 
-import {describe, it, expect, beforeEach} from "vitest";
+import {describe, it, expect, beforeEach, vi} from "vitest";
 import {createGuardMiddleware} from "../src/core/guardMiddleware";
 import {runWithContext} from "../src/core/context";
 import {setConfig, resetConfig} from "../src/core/config";
 import {mockContext, mockSession, mockNext} from "./test-utils";
 
 describe("guardMiddleware", () => {
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
     beforeEach(() => {
+        vi.clearAllMocks();
         // Reset config before each test
         resetConfig();
     });
@@ -459,6 +462,41 @@ describe("guardMiddleware", () => {
             });
 
             expect(next).toHaveBeenCalled();
+        });
+    });
+
+    describe("debug logging", () => {
+        it("logs detailed rule evaluation details", async () => {
+            setConfig({
+                debug: true,
+                loginPath: "/login",
+                protect: [{pattern: "/settings", permission: "settings:write"}],
+            });
+
+            const session = mockSession({permissions: ["settings:read"]});
+            const guard = createGuardMiddleware();
+            const ctx = mockContext({url: "http://localhost/settings"});
+            const next = mockNext();
+
+            await runWithContext({session}, async () => {
+                await guard(ctx as any, next as any);
+            });
+
+            expect(consoleLogSpy).toHaveBeenCalledWith(
+                "[SessionKit] [Guard] Rule evaluation result",
+                expect.objectContaining({
+                    pathname: "/settings",
+                    pattern: "/settings",
+                    allowed: false,
+                    reason: "session permissions do not include required permission",
+                    details: expect.objectContaining({
+                        ruleType: "permission",
+                        requiredPermission: "settings:write",
+                        actualPermissionsCount: 1,
+                        missingPermissions: ["settings:write"],
+                    }),
+                })
+            );
         });
     });
 });

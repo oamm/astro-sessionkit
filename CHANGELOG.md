@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.32 - 2026-07-30
+
+- Adds structured session validation details so debug logs can explain why stored sessions are accepted or rejected.
+- Expands debug logging for session middleware reads, validation, request context setup, invalid-session cleanup, and `touchOnRequest` refreshes.
+- Expands guard debug logging with request normalization, matched protection rules, global protection decisions, role and permission comparisons, missing permissions, and custom hook outcomes.
+- Documents the additional debug output and keeps valid session payloads summarized instead of fully printed.
+- Adds focused coverage for validation reasons and detailed debug logging.
+
 ## 0.1.31 - 2026-07-18
 
 - Adds `ttl` forwarding for `setSession()` and `updateSession()` so callers can pass Astro session expiration options.

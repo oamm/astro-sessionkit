@@ -433,7 +433,14 @@ sessionkit({
 })
 ```
 
-When enabled, SessionKit will log detailed information about matching rules and access decisions to the console.
+When enabled, SessionKit logs detailed information about session and route evaluation to the console, including:
+
+- Whether `context.session` was available and whether `__session__` was present.
+- Session validation success or the exact validation reason when rejected.
+- Session shape summaries such as keys, role, roles count, permissions count, and user ID length. Full valid session payloads are not printed.
+- Whether `touchOnRequest` refreshed the stored session and which key/TTL was used.
+- Request path normalization, matching protection rule, global protection decisions, and exclude matches.
+- Rule evaluation details such as required role or permission, actual role, permission counts, missing permissions, and custom hook results.
 
 ## Session Type
 

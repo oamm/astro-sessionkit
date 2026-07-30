@@ -5,6 +5,7 @@
 import { describe, it, expect } from "vitest";
 import {
   isValidSessionStructure,
+  validateSessionStructure,
   isValidPattern,
   isValidRedirectPath,
 } from "../src/core/validation";
@@ -145,6 +146,19 @@ describe("validation", () => {
     it("rejects session with too long permission items", () => {
       const session = { userId: "123", permissions: ["a".repeat(201)] };
       expect(isValidSessionStructure(session)).toBe(false);
+    });
+  });
+
+  describe("validateSessionStructure", () => {
+    it("returns detailed reason when session is invalid", () => {
+      expect(validateSessionStructure({ email: "user@example.com" })).toEqual({
+        valid: false,
+        reason: "userId must be a non-empty string",
+      });
+    });
+
+    it("returns valid result for valid session", () => {
+      expect(validateSessionStructure({ userId: "123" })).toEqual({ valid: true });
     });
   });
 

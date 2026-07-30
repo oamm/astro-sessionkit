@@ -7,66 +7,154 @@ import { getContextStore } from "./context";
 import { getConfig } from "./config";
 import { matchesPattern } from "./matcher";
 import type { ProtectionRule, Session } from "./types";
-import { isValidSessionStructure } from "./validation";
+import { isValidSessionStructure, validateSessionStructure } from "./validation";
 import * as logger from "./logger";
+
+type RuleCheckResult = {
+  allowed: boolean;
+  reason: string;
+  details?: Record<string, unknown>;
+};
+
+function getRuleType(rule: ProtectionRule): string {
+  if ("allow" in rule) return "custom-allow";
+  if ("role" in rule) return "role";
+  if ("roles" in rule) return "roles";
+  if ("permission" in rule) return "permission";
+  if ("permissions" in rule) return "permissions";
+  return "unknown";
+}
+
+function describeSessionForDebug(session: Session | null): Record<string, unknown> {
+  if (!session) {
+    return {authenticated: false};
+  }
+
+  return {
+    authenticated: true,
+    keys: Object.keys(session),
+    userIdLength: session.userId.length,
+    role: typeof session.role === "string" ? session.role : undefined,
+    rolesCount: Array.isArray(session.roles) ? session.roles.length : undefined,
+    permissionsCount: Array.isArray(session.permissions) ? session.permissions.length : undefined,
+  };
+}
 
 /**
  * Check if session satisfies a protection rule
  */
-async function checkRule(rule: ProtectionRule, session: Session | null): Promise<boolean> {
+async function checkRule(rule: ProtectionRule, session: Session | null): Promise<RuleCheckResult> {
   const { access } = getConfig();
 
   // Custom check overrides everything
   if (access.check) {
     try {
-      return await access.check(rule, session);
+      const allowed = await access.check(rule, session);
+      return {
+        allowed,
+        reason: "custom access.check hook returned " + String(allowed),
+        details: {ruleType: getRuleType(rule)},
+      };
     } catch (error) {
       logger.error('Error in custom access check hook:', error);
-      return false;
+      return {
+        allowed: false,
+        reason: "custom access.check hook threw an error",
+        details: {ruleType: getRuleType(rule)},
+      };
     }
   }
 
   // Custom allow function
   if ("allow" in rule) {
     try {
-      return await rule.allow(session);
+      const allowed = await rule.allow(session);
+      return {
+        allowed,
+        reason: "custom rule allow function returned " + String(allowed),
+        details: {ruleType: "custom-allow"},
+      };
     } catch (error) {
       logger.error('Error in custom rule allow function:', error);
-      return false;
+      return {
+        allowed: false,
+        reason: "custom rule allow function threw an error",
+        details: {ruleType: "custom-allow"},
+      };
     }
   }
 
   // Must be authenticated and have a valid session structure for all other checks
-  if (!session || !isValidSessionStructure(session)) {
-    return false;
+  const validation = validateSessionStructure(session);
+  if (!validation.valid) {
+    return {
+      allowed: false,
+      reason: validation.reason ?? "session is invalid",
+      details: {ruleType: getRuleType(rule), session: describeSessionForDebug(session)},
+    };
   }
 
   // Single role check
   if ("role" in rule) {
     const userRole = access.getRole(session);
-    return userRole === rule.role;
+    const allowed = userRole === rule.role;
+    return {
+      allowed,
+      reason: allowed ? "session role matched required role" : "session role did not match required role",
+      details: {ruleType: "role", requiredRole: rule.role, actualRole: userRole},
+    };
   }
 
   // Multiple roles check (user must have ONE of these)
   if ("roles" in rule) {
     const userRole = access.getRole(session);
-    return userRole !== null && rule.roles.includes(userRole);
+    const allowed = userRole !== null && rule.roles.includes(userRole);
+    return {
+      allowed,
+      reason: allowed ? "session role matched one required role" : "session role did not match any required role",
+      details: {ruleType: "roles", requiredRoles: rule.roles, actualRole: userRole},
+    };
   }
 
   // Single permission check
   if ("permission" in rule) {
     const userPermissions = access.getPermissions(session);
-    return userPermissions.includes(rule.permission);
+    const allowed = userPermissions.includes(rule.permission);
+    return {
+      allowed,
+      reason: allowed ? "session permissions include required permission" : "session permissions do not include required permission",
+      details: {
+        ruleType: "permission",
+        requiredPermission: rule.permission,
+        actualPermissionsCount: userPermissions.length,
+        missingPermissions: allowed ? [] : [rule.permission],
+      },
+    };
   }
 
   // Multiple permissions check (user must have ALL of these)
   if ("permissions" in rule) {
     const userPermissions = access.getPermissions(session);
-    return rule.permissions.every((p) => userPermissions.includes(p));
+    const missingPermissions = rule.permissions.filter((p) => !userPermissions.includes(p));
+    const allowed = missingPermissions.length === 0;
+    return {
+      allowed,
+      reason: allowed ? "session permissions include all required permissions" : "session permissions are missing required permissions",
+      details: {
+        ruleType: "permissions",
+        requiredPermissions: rule.permissions,
+        actualPermissionsCount: userPermissions.length,
+        missingPermissions,
+      },
+    };
   }
 
   // No specific rule matched - allow by default
-  return true;
+  return {
+    allowed: true,
+    reason: "rule has no role, permission, or custom allow requirement",
+    details: {ruleType: getRuleType(rule)},
+  };
 }
 
 /**
@@ -97,7 +185,16 @@ export function createGuardMiddleware(): MiddlewareHandler {
         : loginPath;
 
     if (debug) {
-        logger.debug(`[Guard] Pathname: ${pathname} (normalized: ${normalizedPathname}), GlobalProtect: ${globalProtect}, Rules: ${protect.length}`);
+        logger.debug("[Guard] Evaluating request", {
+            method: context.request.method,
+            pathname,
+            normalizedPathname,
+            loginPath,
+            normalizedLoginPath,
+            globalProtect,
+            ruleCount: protect.length,
+            exclude,
+        });
     }
 
     // No rules configured and no global protect - skip
@@ -112,14 +209,20 @@ export function createGuardMiddleware(): MiddlewareHandler {
     const session = sessionContext?.session ?? null;
 
     if (debug) {
-        logger.debug(`[Guard] Session retrieved from store: ${session ? 'exists' : 'null'}`);
+        logger.debug("[Guard] Session retrieved from context store", describeSessionForDebug(session));
     }
 
     // Find matching rule (using normalized path)
     const rule = protect.find((r) => matchesPattern(r.pattern, normalizedPathname));
 
     if (rule && debug) {
-        logger.debug(`[Guard] Found matching rule for ${pathname}:`, rule);
+        logger.debug("[Guard] Found matching protection rule", {
+            pathname,
+            normalizedPathname,
+            pattern: rule.pattern,
+            ruleType: getRuleType(rule),
+            redirectTo: rule.redirectTo,
+        });
     }
 
     // No matching rule - check global protection
@@ -131,53 +234,98 @@ export function createGuardMiddleware(): MiddlewareHandler {
                 // ONLY for GET requests to avoid breaking POST login/actions
                 if (context.request.method === 'GET' && session && isValidSessionStructure(session)) {
                     if (debug) {
-                        logger.debug(`[GlobalProtect] Redirecting ${pathname} to / because session is already present (GET request)`);
+                        logger.debug("[GlobalProtect] Redirecting authenticated GET away from loginPath", {
+                            pathname,
+                            redirectTo: "/",
+                            session: describeSessionForDebug(session),
+                        });
                     }
                     return context.redirect('/');
                 }
 
                 if (debug) {
-                    logger.debug(`[GlobalProtect] Skipping ${pathname} because it is the loginPath`);
+                    logger.debug("[GlobalProtect] Allowing request because pathname is loginPath", {
+                        pathname,
+                        method: context.request.method,
+                        authenticated: Boolean(session && isValidSessionStructure(session)),
+                    });
                 }
                 return next();
             }
 
             // Skip if path is in exclude list (using normalized path)
-            if (exclude.some((pattern) => matchesPattern(pattern, normalizedPathname))) {
+            const matchedExclude = exclude.find((pattern) => matchesPattern(pattern, normalizedPathname));
+            if (matchedExclude) {
                 if (debug) {
-                    logger.debug(`[GlobalProtect] Skipping ${pathname} because it matches an exclude pattern`);
+                    logger.debug("[GlobalProtect] Allowing request because pathname matches exclude pattern", {
+                        pathname,
+                        normalizedPathname,
+                        matchedExclude,
+                    });
                 }
                 return next();
             }
 
             // Require valid session
-            if (!session || !isValidSessionStructure(session)) {
+            const validation = validateSessionStructure(session);
+            if (!validation.valid) {
                 if (debug) {
-                    logger.debug(`[GlobalProtect] Redirecting to ${loginPath} because session is ${session ? 'invalid' : 'missing'}`);
+                    logger.debug("[GlobalProtect] Redirecting because session is not valid", {
+                        pathname,
+                        redirectTo: loginPath,
+                        reason: validation.reason,
+                        session: describeSessionForDebug(session),
+                    });
                 }
                 return context.redirect(loginPath);
             }
         }
 
         if (debug) {
-            logger.debug(`[GlobalProtect] Allowing ${pathname} because session is valid or globalProtect is false`);
+            logger.debug("[GlobalProtect] Allowing request without matching rule", {
+                pathname,
+                globalProtect,
+                reason: globalProtect ? "valid session satisfied global protection" : "globalProtect is false",
+                session: describeSessionForDebug(session),
+            });
         }
         return next();
     }
 
     // Check if access is allowed
-    const allowed = await checkRule(rule, session);
+    const result = await checkRule(rule, session);
+    if (debug) {
+        logger.debug("[Guard] Rule evaluation result", {
+            pathname,
+            pattern: rule.pattern,
+            allowed: result.allowed,
+            reason: result.reason,
+            details: result.details,
+            session: describeSessionForDebug(session),
+        });
+    }
 
-    if (!allowed) {
+    if (!result.allowed) {
         const redirectTo = rule.redirectTo ?? loginPath;
         if (debug) {
-            logger.debug(`[Guard] Redirecting to ${redirectTo} because access was denied by rule:`, rule);
+            logger.debug("[Guard] Redirecting because access was denied by rule", {
+                pathname,
+                redirectTo,
+                pattern: rule.pattern,
+                ruleType: getRuleType(rule),
+                reason: result.reason,
+            });
         }
         return context.redirect(redirectTo);
     }
 
     if (debug) {
-        logger.debug(`[Guard] Allowing ${pathname} because access was granted by rule:`, rule);
+        logger.debug("[Guard] Allowing request because access was granted by rule", {
+            pathname,
+            pattern: rule.pattern,
+            ruleType: getRuleType(rule),
+            reason: result.reason,
+        });
     }
     return next();
   };

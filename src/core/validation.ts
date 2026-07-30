@@ -4,91 +4,104 @@
 
 import type {Session} from "./types";
 
+export interface SessionValidationResult {
+    valid: boolean;
+    reason?: string;
+}
+
 /**
  * Validate that session has the expected structure
  * Prevents crashes from malformed data and DoS attacks
  */
-export function isValidSessionStructure(input: unknown): input is Session {
+export function validateSessionStructure(input: unknown): SessionValidationResult {
     // Must be an object
     if (!input || typeof input !== 'object') {
-        return false;
+        return {valid: false, reason: "session must be an object"};
     }
 
     const session = input as any;
 
     // Required: userId must be a non-empty string
     if (typeof session.userId !== 'string' || !session.userId.trim()) {
-        return false;
+        return {valid: false, reason: "userId must be a non-empty string"};
     }
 
     // Security: Check for unexpected null bytes or control characters in userId
     if (/[\x00-\x1F\x7F]/.test(session.userId)) {
-        return false;
+        return {valid: false, reason: "userId must not contain control characters"};
     }
 
     // DoS protection: Limit userId length
     if (session.userId.length > 255) {
-        return false;
+        return {valid: false, reason: "userId must be 255 characters or fewer"};
     }
 
     // Optional fields validation (if present)
     if (session.email !== undefined && session.email !== null) {
         if (typeof session.email !== 'string') {
-            return false;
+            return {valid: false, reason: "email must be a string when provided"};
         }
         // Reasonable email length limit
         if (session.email.length > 320) {
-            return false;
+            return {valid: false, reason: "email must be 320 characters or fewer"};
         }
         // Basic email format sanity check (not full validation, just security)
         if (session.email.length > 0 && !session.email.includes('@')) {
-            return false;
+            return {valid: false, reason: "email must include @ when provided"};
         }
     }
 
     if (session.role !== undefined && session.role !== null) {
         if (typeof session.role !== 'string') {
-            return false;
+            return {valid: false, reason: "role must be a string when provided"};
         }
         // Reasonable role length limit
         if (session.role.length > 100) {
-            return false;
+            return {valid: false, reason: "role must be 100 characters or fewer"};
         }
         // Security: No control characters in role
         if (/[\x00-\x1F\x7F]/.test(session.role)) {
-            return false;
+            return {valid: false, reason: "role must not contain control characters"};
         }
     }
 
     if (session.roles !== undefined && session.roles !== null) {
         if (!Array.isArray(session.roles)) {
-            return false;
+            return {valid: false, reason: "roles must be an array when provided"};
         }
         // DoS protection: Limit array size
         if (session.roles.length > 100) {
-            return false;
+            return {valid: false, reason: "roles must contain 100 items or fewer"};
         }
         // All items must be strings with reasonable length
         if (!session.roles.every((r: any) => typeof r === 'string' && r.length <= 100)) {
-            return false;
+            return {valid: false, reason: "each role in roles must be a string of 100 characters or fewer"};
         }
     }
 
     if (session.permissions !== undefined && session.permissions !== null) {
         if (!Array.isArray(session.permissions)) {
-            return false;
+            return {valid: false, reason: "permissions must be an array when provided"};
         }
         // DoS protection: Limit array size
         if (session.permissions.length > 500) {
-            return false;
+            return {valid: false, reason: "permissions must contain 500 items or fewer"};
         }
         // All items must be strings with reasonable length
         if (!session.permissions.every((p: any) => typeof p === 'string' && p.length <= 200)) {
-            return false;
+            return {valid: false, reason: "each permission must be a string of 200 characters or fewer"};
         }
     }
 
-    return true;
+    return {valid: true};
+}
+
+/**
+ * Validate that session has the expected structure
+ * Prevents crashes from malformed data and DoS attacks
+ */
+export function isValidSessionStructure(input: unknown): input is Session {
+    return validateSessionStructure(input).valid;
 }
 
 /**
