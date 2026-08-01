@@ -1,12 +1,16 @@
 import { getConfig } from "./config";
 
+function formatMessage(message: string): string {
+  return `[SessionKit] [${new Date().toISOString()}] ${message}`;
+}
+
 /**
  * Log message if debug mode is enabled
  */
 export function debug(message: string, ...args: any[]): void {
   const { debug } = getConfig();
   if (debug) {
-    console.log(`[SessionKit] ${message}`, ...args);
+    console.log(formatMessage(message), ...args);
   }
 }
 
@@ -16,7 +20,7 @@ export function debug(message: string, ...args: any[]): void {
 export function error(message: string, ...args: any[]): void {
   const { debug } = getConfig();
   if (debug || process.env.NODE_ENV !== 'production') {
-    console.error(`[SessionKit] ${message}`, ...args);
+    console.error(formatMessage(message), ...args);
   }
 }
 
@@ -26,7 +30,7 @@ export function error(message: string, ...args: any[]): void {
 export function warn(message: string, ...args: any[]): void {
   const { debug } = getConfig();
   if (debug || process.env.NODE_ENV !== 'production') {
-    console.warn(`[SessionKit] ${message}`, ...args);
+    console.warn(formatMessage(message), ...args);
   }
 }
 
@@ -36,6 +40,6 @@ export function warn(message: string, ...args: any[]): void {
 export function info(message: string, ...args: any[]): void {
   const { debug } = getConfig();
   if (debug || process.env.NODE_ENV !== 'production') {
-    console.log(`[SessionKit] ${message}`, ...args);
+    console.log(formatMessage(message), ...args);
   }
 }

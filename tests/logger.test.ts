@@ -3,6 +3,8 @@ import { debug, warn, error, info } from "../src/core/logger";
 import { setConfig, resetConfig } from "../src/core/config";
 
 describe("logger", () => {
+  const timestampedPrefix = "[SessionKit] [2026-08-01T12:00:00.000Z]";
+
   vi.spyOn(console, 'debug').mockImplementation(() => {});
   const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
   const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -10,11 +12,14 @@ describe("logger", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-01T12:00:00.000Z"));
     process.env.NODE_ENV = 'development';
     resetConfig();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     process.env.NODE_ENV = 'test';
   });
 
@@ -28,7 +33,7 @@ describe("logger", () => {
     it("logs when debug is true", () => {
       setConfig({ debug: true });
       debug("test message", { foo: "bar" });
-      expect(consoleLogSpy).toHaveBeenCalledWith("[SessionKit] test message", { foo: "bar" });
+      expect(consoleLogSpy).toHaveBeenCalledWith(`${timestampedPrefix} test message`, { foo: "bar" });
     });
   });
 
@@ -37,7 +42,7 @@ describe("logger", () => {
       process.env.NODE_ENV = 'development';
       setConfig({ debug: false });
       warn("test warning");
-      expect(consoleWarnSpy).toHaveBeenCalledWith("[SessionKit] test warning");
+      expect(consoleWarnSpy).toHaveBeenCalledWith(`${timestampedPrefix} test warning`);
     });
 
     it("does not log in production if debug is false", () => {
@@ -51,7 +56,7 @@ describe("logger", () => {
       process.env.NODE_ENV = 'production';
       setConfig({ debug: true });
       warn("test warning");
-      expect(consoleWarnSpy).toHaveBeenCalledWith("[SessionKit] test warning");
+      expect(consoleWarnSpy).toHaveBeenCalledWith(`${timestampedPrefix} test warning`);
     });
   });
 
@@ -60,7 +65,7 @@ describe("logger", () => {
       process.env.NODE_ENV = 'development';
       setConfig({ debug: false });
       error("test error");
-      expect(consoleErrorSpy).toHaveBeenCalledWith("[SessionKit] test error");
+      expect(consoleErrorSpy).toHaveBeenCalledWith(`${timestampedPrefix} test error`);
     });
 
     it("does not log in production if debug is false", () => {
@@ -74,7 +79,7 @@ describe("logger", () => {
       process.env.NODE_ENV = 'production';
       setConfig({ debug: true });
       error("test error");
-      expect(consoleErrorSpy).toHaveBeenCalledWith("[SessionKit] test error");
+      expect(consoleErrorSpy).toHaveBeenCalledWith(`${timestampedPrefix} test error`);
     });
   });
 
@@ -83,7 +88,7 @@ describe("logger", () => {
       process.env.NODE_ENV = 'development';
       setConfig({ debug: false });
       info("test info");
-      expect(consoleLogSpy).toHaveBeenCalledWith("[SessionKit] test info");
+      expect(consoleLogSpy).toHaveBeenCalledWith(`${timestampedPrefix} test info`);
     });
 
     it("does not log in production if debug is false", () => {
@@ -97,7 +102,7 @@ describe("logger", () => {
       process.env.NODE_ENV = 'production';
       setConfig({ debug: true });
       info("test info");
-      expect(consoleLogSpy).toHaveBeenCalledWith("[SessionKit] test info");
+      expect(consoleLogSpy).toHaveBeenCalledWith(`${timestampedPrefix} test info`);
     });
   });
 });

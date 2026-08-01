@@ -310,7 +310,7 @@ describe("sessionMiddleware", () => {
     await sessionMiddleware(ctx as any, mockNext() as any);
 
     expect(consoleLogSpy).toHaveBeenCalledWith(
-      "[SessionKit] [SessionMiddleware] Read session from Astro store",
+      expect.stringMatching(/^\[SessionKit] \[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z] \[SessionMiddleware] Read session from Astro store$/),
       expect.objectContaining({
         key: SESSION_KEY,
         sessionStoreAvailable: true,
@@ -321,11 +321,11 @@ describe("sessionMiddleware", () => {
       })
     );
     expect(consoleLogSpy).toHaveBeenCalledWith(
-      "[SessionKit] [SessionMiddleware] Session validation result",
+      expect.stringMatching(/^\[SessionKit] \[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z] \[SessionMiddleware] Session validation result$/),
       expect.objectContaining({ valid: true })
     );
     expect(consoleLogSpy).toHaveBeenCalledWith(
-      "[SessionKit] [SessionMiddleware] Touched valid session",
+      expect.stringMatching(/^\[SessionKit] \[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z] \[SessionMiddleware] Touched valid session$/),
       { key: SESSION_KEY, ttl: 3600 }
     );
   });

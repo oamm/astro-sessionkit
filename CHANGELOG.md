@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.33 - 2026-08-01
+
+- Adds ISO-8601 UTC timestamps to SessionKit debug, info, warning, and error log prefixes.
+- Updates logger, session middleware, and guard middleware tests to cover timestamped log output.
+
 ## 0.1.32 - 2026-07-30
 
 - Adds structured session validation details so debug logs can explain why stored sessions are accepted or rejected.

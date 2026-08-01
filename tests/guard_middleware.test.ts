@@ -483,7 +483,7 @@ describe("guardMiddleware", () => {
             });
 
             expect(consoleLogSpy).toHaveBeenCalledWith(
-                "[SessionKit] [Guard] Rule evaluation result",
+                expect.stringMatching(/^\[SessionKit] \[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z] \[Guard] Rule evaluation result$/),
                 expect.objectContaining({
                     pathname: "/settings",
                     pattern: "/settings",
